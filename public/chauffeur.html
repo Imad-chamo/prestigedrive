@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PrestigeDrive Admin">
+    <meta name="description" content="Interface d'administration PrestigeDrive">
+    <title>Interface Chauffeur PrestigeDrive - Demandes de Devis</title>
+    <link rel="manifest" href="manifest-admin.json">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    <link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/utils.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1a1a1a;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Styles pour l'application installée (PWA) */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: calc(env(safe-area-inset-top) + 0px);
+            }
+
+            .admin-navbar {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
+
+        .driver-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            margin-top: 100px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #D4AF37;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.active {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff 100%);
+            border-left: 4px solid #D4AF37;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .stat-card.active::after {
+            content: '✓';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #D4AF37;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .stat-card-urgent {
+            border-left-color: #ef4444 !important;
+            background: linear-gradient(135deg, #fff 0%, #fef2f2 100%);
+        }
+
+        .stat-card-urgent.active {
+            background: linear-gradient(135deg, #fee2e2 0%, #fff9e6 100%);
+            border-left-color: #ef4444 !important;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                display: flex;
+                flex-direction: row;
+                gap: 0.75rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .stats-grid::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .stats-grid::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 2px;
+            }
+
+            .stats-grid::-webkit-scrollbar-thumb {
+                background: #D4AF37;
+                border-radius: 2px;
+            }
+
+            .stat-card {
+                flex: 0 0 auto;
+                min-width: 100px;
+                padding: 0.75rem 1rem;
+                border-left: 3px solid #D4AF37;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .stat-card h3 {
+                font-size: 0.65rem;
+                margin-bottom: 0.35rem;
+                line-height: 1.2;
+            }
+
+            .stat-card .number {
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                gap: 0.5rem;
+            }
+
+            .stat-card {
+                min-width: 85px;
+                padding: 0.6rem 0.75rem;
+            }
+
+            .stat-card h3 {
+                font-size: 0.6rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .stat-card .number {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Barre de recherche */
+        .search-bar-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus-within {
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.2);
+            border: 2px solid #D4AF37;
+        }
+
+        .search-bar i.fa-search {
+            color: #64748b;
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            color: #1a1a1a;
+            background: transparent;
+        }
+
+        .search-bar input::placeholder {
+            color: #94a3b8;
+        }
+
+        .clear-search {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            background: #f1f5f9;
+            color: #ef4444;
+        }
+
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #D4AF37;
+            color: white;
+            border-color: #D4AF37;
+        }
+
+        .filter-btn:hover {
+            border-color: #D4AF37;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .demandes-list {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .demande-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border-left: 4px solid #e2e8f0;
+            position: relative;
+        }
+
+        .demande-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            background: #f8fafc;
+        }
+
+        .demande-card.urgent {
+            border-left-color: #ef4444 !important;
+            background: linear-gradient(135deg, #fff 0%, #fef2f2 100%);
+        }
+
+        .action-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.7rem;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .time-badge {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            background: #10b981;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .urgent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-left: 0.5rem;
+            padding: 0.3rem 0.7rem;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        .time-indicator {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            background: #e2e8f0;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border-radius: 8px;
+            font-style: italic;
+        }
+
+        .quick-action-btn {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #D4AF37, #b8941f);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+            background: linear-gradient(135deg, #b8941f, #D4AF37);
+        }
+
+        .quick-action-btn i {
+            font-size: 0.75rem;
+        }
+
+        .demande-card.nouvelle {
+            border-left-color: #10b981;
+        }
+
+        .demande-card.devis-envoye {
+            border-left-color: #3b82f6;
+        }
+
+        .demande-card.accepte {
+            border-left-color: #f59e0b;
+        }
+
+        .demande-card.refuse {
+            border-left-color: #ef4444;
+        }
+
+        .demande-card.termine {
+            border-left-color: #64748b;
+        }
+
+        /* Compatibilité avec anciens statuts */
+        .demande-card.en-cours {
+            border-left-color: #f59e0b;
+        }
+
+        .demande-card.terminee {
+            border-left-color: #64748b;
+        }
+
+        .demande-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .demande-info h3 {
+            font-size: 1.3rem;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .demande-info .date {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .demande-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .demande-status.nouvelle {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .demande-status.devis-envoye {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .demande-status.accepte {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .demande-status.refuse {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .demande-status.termine {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        /* Compatibilité avec anciens statuts */
+        .demande-status.en-cours {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .demande-status.terminee {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .demande-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .detail-item i {
+            color: #D4AF37;
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+
+        .detail-item div {
+            flex: 1;
+        }
+
+        .detail-item .label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item .value {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #D4AF37 0%, #b8941f 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            min-width: 40px;
+            height: 36px;
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .copy-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #b8941f 0%, #D4AF37 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+        }
+
+        .copy-btn i {
+            font-size: 1rem;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .copy-btn:hover i {
+            transform: scale(1.1);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .copy-btn.copied i {
+            transform: scale(1.2);
+        }
+
+        .copy-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .copy-btn.copied:hover {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .demande-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #D4AF37, #b8941f);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1a1a1a;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .reponse-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .reponse-section h4 {
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+
+        .reponse-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .reponse-form textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .reponse-form textarea:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+
+        .reponse-display {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #D4AF37;
+        }
+
+        .reponse-display .date {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .reponse-display .devis-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #D4AF37;
+        }
+
+        .reponse-display .devis-display strong {
+            color: #1a1a1a;
+            margin-right: 0.5rem;
+        }
+
+        .reponse-display .message-display {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #94a3b8;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #D4AF37;
+            text-decoration: none;
+        }
+
+        .modal-content h2 {
+            color: #D4AF37;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+            padding-bottom: 1rem;
+        }
+
+        .modal-details .detail-item {
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-details .detail-item .label {
+            font-size: 0.9rem;
+        }
+
+        .modal-details .detail-item .value {
+            font-size: 1rem;
+        }
+
+        /* Workflow Timeline */
+        .workflow-timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .timeline-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-step.active .timeline-icon {
+            background: linear-gradient(135deg, #D4AF37, #b8941f);
+            color: white;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .timeline-step.current .timeline-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            animation: pulse 2s infinite;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .timeline-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .timeline-step.active .timeline-label {
+            color: #1a1a1a;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .timeline-step:last-child .timeline-line {
+            display: none;
+        }
+
+        .timeline-step.active~.timeline-step .timeline-line {
+            background: linear-gradient(90deg, #D4AF37, #e2e8f0);
+        }
+
+        /* Admin Navbar Styles - Enhanced */
+        .admin-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, transparent, #D4AF37, transparent) 1;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(212, 175, 55, 0.1) inset;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .admin-navbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(212, 175, 55, 0.5),
+                    rgba(212, 175, 55, 0.8),
+                    rgba(212, 175, 55, 0.5),
+                    transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .admin-navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            position: relative;
+        }
+
+        .admin-navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .admin-navbar-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .admin-navbar-title h2 {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.3px;
+        }
+
+        .admin-navbar-title h2 i {
+            color: #D4AF37;
+            font-size: 1.4rem;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #D4AF37 0%, #f5d76e 50%, #D4AF37 100%);
+            background-size: 200% 200%;
+            color: #1a1a1a;
+            padding: 0.35rem 0.9rem;
+            border-radius: 25px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4),
+                0 0 0 2px rgba(212, 175, 55, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            animation: gradientShift 3s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-badge::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+
+        .admin-navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-logout-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .admin-logout-btn:hover::before {
+            left: 100%;
+        }
+
+        .admin-logout-btn:hover {
+            color: #ffffff;
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .admin-logout-btn i {
+            font-size: 1.05rem;
+            transition: transform 0.3s ease;
+        }
+
+        .admin-logout-btn:hover i {
+            transform: scale(1.15) rotate(-15deg);
+        }
+
+        .admin-navbar-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 32px;
+            height: 24px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 6px 4px;
+            z-index: 10002;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .admin-navbar-toggle:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .admin-toggle-line {
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #D4AF37, #f5d76e);
+            border-radius: 3px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 4px rgba(212, 175, 55, 0.5);
+        }
+
+        .admin-navbar-toggle.active {
+            background: rgba(212, 175, 55, 0.25);
+            border-color: #D4AF37;
+        }
+
+        .admin-navbar-toggle.active .admin-toggle-line:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+            background: #D4AF37;
+        }
+
+        .admin-navbar-toggle.active .admin-toggle-line:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+
+        .admin-navbar-toggle.active .admin-toggle-line:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+            background: #D4AF37;
+        }
+
+        .admin-navbar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .admin-navbar-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .admin-navbar-mobile {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 420px;
+            height: 100vh;
+            height: 100dvh;
+            background: linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(212, 175, 55, 0.2) inset;
+            transition: right 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .admin-navbar-mobile.active {
+            right: 0;
+        }
+
+        .admin-mobile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem 2rem 1.5rem;
+            border-bottom: 2px solid transparent;
+            border-image: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent) 1;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), transparent);
+        }
+
+        .admin-mobile-logo-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .admin-mobile-logo-section h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-mobile-close {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            font-size: 1.8rem;
+            color: #D4AF37;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+        }
+
+        .admin-mobile-close:hover {
+            background: rgba(212, 175, 55, 0.25);
+            border-color: #D4AF37;
+            color: #f5d76e;
+            transform: rotate(90deg);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .admin-mobile-menu-list {
+            list-style: none;
+            margin: 0;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .admin-mobile-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.3rem 2rem;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid transparent;
+            position: relative;
+            margin: 0 1rem;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .admin-mobile-menu-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), transparent);
+            transition: width 0.4s ease;
+        }
+
+        .admin-mobile-menu-link:hover::before,
+        .admin-mobile-menu-link.active::before {
+            width: 100%;
+        }
+
+        .admin-mobile-menu-link:hover,
+        .admin-mobile-menu-link.active {
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border-left-color: #D4AF37;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .admin-mobile-menu-link.active {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-mobile-menu-link i {
+            width: 24px;
+            text-align: center;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .admin-mobile-menu-link:hover i,
+        .admin-mobile-menu-link.active i {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+        }
+
+        @media (max-width: 768px) {
+            .admin-navbar-title h2 {
+                font-size: 1.1rem;
+            }
+
+            .admin-navbar-container {
+                padding: 1rem 1.5rem;
+                gap: 1.5rem;
+            }
+
+            .admin-navbar-left {
+                flex: 1;
+            }
+
+            .admin-logout-btn {
+                padding: 0.65rem 1.2rem;
+                font-size: 0.9rem;
+            }
+
+            .admin-logout-btn span {
+                display: inline;
+            }
+
+            .driver-container {
+                padding: 1rem;
+            }
+
+            .demande-header {
+                flex-direction: column;
+            }
+
+            .demande-details {
+                grid-template-columns: 1fr;
+            }
+
+            .demande-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-navbar-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .admin-navbar-title h2 {
+                font-size: 1rem;
+            }
+
+            .admin-logout-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar Admin/Chauffeur -->
+    <header class="admin-navbar" id="adminNavbar">
+        <div class="admin-navbar-container">
+            <div class="admin-navbar-left">
+                <div class="admin-navbar-title">
+                    <h2><i class="fas fa-user-tie"></i> Interface Chauffeur</h2>
+                    <span class="admin-badge">Admin</span>
+                </div>
+            </div>
+            <div class="admin-navbar-actions">
+                <a href="#" class="admin-logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Déconnexion</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+
+    <div class="driver-container">
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="search-bar-container">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, email, téléphone..."
+                    autocomplete="off">
+                <button class="clear-search" id="clearSearch" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="demandes-list" id="demandesList">
+            <!-- Demandes will be populated by JavaScript -->
+        </div>
+
+        <!-- Modal pour voir les détails d'une demande -->
+        <div id="demandeModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-button" id="closeModalButton">&times;</span>
+                <h2 id="modalTitle">Détails de la Demande</h2>
+                <div class="modal-details" id="modalDetails">
+                    <!-- Détails de la demande -->
+                </div>
+
+                <div class="response-form" id="responseForm" style="display: none;">
+                    <h3>Répondre à la demande</h3>
+                    <div class="form-group">
+                        <label for="modal-devis">
+                            <i class="fas fa-euro-sign"></i> Devis (€)
+                        </label>
+                        <input type="number" id="modal-devis" name="devis" placeholder="0.00" step="0.01" min="0"
+                            required class="devis-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-reponse">
+                            <i class="fas fa-comment"></i> Message (optionnel)
+                        </label>
+                        <textarea id="modal-reponse" name="reponse" placeholder="Message optionnel..."></textarea>
+                    </div>
+                    <div class="demande-actions">
+                        <button type="button" class="btn btn-primary" id="sendResponseButton">
+                            <i class="fas fa-paper-plane"></i> Envoyer le devis
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="markAcceptedButton">
+                            <i class="fas fa-check"></i> Marquer "Accepté"
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="markRefusedButton">
+                            <i class="fas fa-times"></i> Marquer "Refusé"
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="markCompletedButton">
+                            <i class="fas fa-check-circle"></i> Marquer "Terminé"
+                        </button>
+                    </div>
+                </div>
+
+                <div class="response-display" id="responseDisplay" style="display: none;">
+                    <h3>Réponse du chauffeur</h3>
+                    <p><strong>Date de réponse :</strong> <span id="displayDateReponse"></span></p>
+                    <div id="displayDevis"></div>
+                    <p id="displayReponseText"></p>
+                    <div id="paiementSection"
+                        style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                        <!-- Bouton de paiement Stripe sera ajouté ici -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Vérification de l'authentification
+        if (localStorage.getItem('chauffeur_authenticated') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // Fonction de déconnexion
+        function logout() {
+            localStorage.removeItem('chauffeur_authenticated');
+            localStorage.removeItem('chauffeur_username');
+            localStorage.removeItem('chauffeur_login_time');
+            window.location.href = 'login.html';
+        }
+
+        // Ajouter l'event listener au bouton de déconnexion
+        document.addEventListener('DOMContentLoaded', function () {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                        logout();
+                    }
+                });
+            }
+        });
+
+        let demandes = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Charger les demandes depuis l'API ou localStorage
+        async function loadDemandes() {
+            try {
+                const response = await safeFetch('/api/demandes');
+
+                if (!response.success) {
+                    throw new Error(response.error);
+                }
+
+                const result = response.data;
+
+                if (result.success) {
+                    demandes = result.data || [];
+                    if (typeof safeLog !== 'undefined') {
+                        safeLog(`✅ ${demandes.length} demande(s) chargée(s) depuis l'API`);
+                    } else {
+                        console.log(`✅ ${demandes.length} demande(s) chargée(s) depuis l'API`);
+                    }
+                    updateStats();
+                    displayDemandes();
+
+                    // Afficher un message si aucune donnée
+                    if (demandes.length === 0) {
+                        const list = document.getElementById('demandesList');
+                        if (list) {
+                            list.innerHTML = `
+                                <div style="text-align: center; padding: 3rem; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                                    <i class="fas fa-inbox" style="font-size: 4rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                    <h3 style="color: #666; margin-bottom: 0.5rem;">Aucune demande pour le moment</h3>
+                                    <p style="color: #999;">Les demandes de devis apparaîtront ici une fois qu'elles seront créées depuis le formulaire.</p>
+                                    <a href="/" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #D4AF37; color: white; text-decoration: none; border-radius: 8px;">
+                                        <i class="fas fa-plus"></i> Créer une demande de test
+                                    </a>
+                                </div>
+                            `;
+                        }
+                    }
+                } else {
+                    throw new Error(result.error || 'Erreur serveur');
+                }
+            } catch (error) {
+                if (typeof safeError !== 'undefined') {
+                    safeError('❌ Erreur chargement API:', error);
+                } else {
+                    console.error('❌ Erreur chargement API:', error);
+                }
+
+                // Afficher un message d'erreur à l'utilisateur
+                const list = document.getElementById('demandesList');
+                if (list) {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px; margin: 2rem 0;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                            <h3 style="color: #856404; margin-bottom: 0.5rem;">Erreur de connexion au serveur</h3>
+                            <p style="color: #856404; margin-bottom: 1rem;">${error.message}</p>
+                            <div style="background: white; padding: 1rem; border-radius: 8px; text-align: left; max-width: 500px; margin: 0 auto;">
+                                <p style="color: #666; margin-bottom: 0.5rem;"><strong>Solutions :</strong></p>
+                                <ul style="color: #666; text-align: left; margin-left: 1.5rem;">
+                                    <li>Vérifiez que le serveur est démarré : <code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 4px;">npm start</code></li>
+                                    <li>Vérifiez la console du navigateur (F12) pour plus de détails</li>
+                                    <li>Vérifiez que MongoDB est connecté</li>
+                                </ul>
+                            </div>
+                            <button onclick="loadDemandes()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #D4AF37; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                <i class="fas fa-sync-alt"></i> Réessayer
+                            </button>
+                        </div>
+                    `;
+                }
+
+                // Fallback vers localStorage
+                try {
+                    const stored = localStorage.getItem('demandes_devis');
+                    demandes = stored ? JSON.parse(stored) : [];
+                    if (demandes.length > 0) {
+                        if (typeof safeLog !== 'undefined') {
+                            safeLog(`⚠️ ${demandes.length} demande(s) chargée(s) depuis localStorage (mode hors ligne)`);
+                        } else {
+                            console.warn(`⚠️ ${demandes.length} demande(s) chargée(s) depuis localStorage (mode hors ligne)`);
+                        }
+                    }
+                    updateStats();
+                    displayDemandes();
+                } catch (localError) {
+                    if (typeof safeError !== 'undefined') {
+                        safeError('Erreur chargement localStorage:', localError);
+                    } else {
+                        console.error('Erreur chargement localStorage:', localError);
+                    }
+                    demandes = [];
+                    updateStats();
+                    displayDemandes();
+                }
+            }
+        }
+
+        // Fonction pour obtenir le label d'un statut
+        function getStatusLabel(status) {
+            const labels = {
+                'nouvelle': 'Nouvelle',
+                'devis-envoye': 'Devis envoyé',
+                'accepte': 'Accepté',
+                'refuse': 'Refusé',
+                'termine': 'Terminé',
+                // Anciens statuts pour compatibilité
+                'en-cours': 'Accepté',
+                'terminee': 'Terminé'
+            };
+            return labels[status] || status;
+        }
+
+        // Mettre à jour les statistiques (simplifiées pour meilleure UX)
+        function updateStats() {
+            const stats = {
+                total: demandes.length,
+                aTraiter: demandes.filter(d => d.status === 'nouvelle').length, // Seulement les nouvelles (besoin d'action)
+                enCours: demandes.filter(d => d.status === 'devis-envoye' || d.status === 'accepte').length, // Devis envoyé (attente client) + Accepté (course en cours)
+                terminees: demandes.filter(d => d.status === 'termine' || d.status === 'terminee' || d.status === 'refuse').length
+            };
+
+            const isAllActive = currentFilter === 'all';
+            const isATraiterActive = currentFilter === 'a-traiter';
+            const isEnCoursActive = currentFilter === 'en-cours';
+            const isTermineesActive = currentFilter === 'terminees';
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card ${isAllActive ? 'active' : ''}" data-filter="all" title="Afficher toutes les demandes">
+                    <h3>Total</h3>
+                    <div class="number">${stats.total}</div>
+                </div>
+                <div class="stat-card stat-card-urgent ${isATraiterActive ? 'active' : ''}" data-filter="a-traiter" title="Afficher les demandes à traiter">
+                    <h3>À traiter</h3>
+                    <div class="number" style="color: #ef4444;">${stats.aTraiter}</div>
+                    <div class="stat-badge">Action requise</div>
+                </div>
+                <div class="stat-card ${isEnCoursActive ? 'active' : ''}" data-filter="en-cours" title="Afficher les demandes en cours">
+                    <h3>En cours</h3>
+                    <div class="number" style="color: #f59e0b;">${stats.enCours}</div>
+                </div>
+                <div class="stat-card ${isTermineesActive ? 'active' : ''}" data-filter="terminees" title="Afficher les demandes terminées">
+                    <h3>Terminées</h3>
+                    <div class="number" style="color: #64748b;">${stats.terminees}</div>
+                </div>
+            `;
+
+            // Ajouter les event listeners pour le filtrage
+            document.querySelectorAll('.stat-card[data-filter]').forEach(card => {
+                card.addEventListener('click', function () {
+                    const filter = this.dataset.filter;
+                    currentFilter = filter;
+                    updateStats(); // Mettre à jour pour afficher la carte active
+                    displayDemandes(); // Filtrer les demandes
+                });
+            });
+        }
+
+        // Fonction pour calculer le temps écoulé
+        function getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return "À l'instant";
+            if (diffMins < 60) return `Il y a ${diffMins} min`;
+            if (diffHours < 24) return `Il y a ${diffHours}h`;
+            if (diffDays === 1) return "Il y a 1 jour";
+            return `Il y a ${diffDays} jours`;
+        }
+
+        // Fonction pour vérifier si une demande est urgente (> 24h)
+        function isUrgent(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffHours = (now - date) / 3600000;
+            return diffHours > 24;
+        }
+
+        // Afficher les demandes (avec tri par priorité et recherche)
+        function displayDemandes() {
+            const list = document.getElementById('demandesList');
+
+            let filtered = demandes;
+
+            // Filtre par statut
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'a-traiter') {
+                    filtered = demandes.filter(d => d.status === 'nouvelle');
+                } else if (currentFilter === 'en-cours') {
+                    filtered = demandes.filter(d => d.status === 'devis-envoye' || d.status === 'accepte');
+                } else if (currentFilter === 'terminees') {
+                    filtered = demandes.filter(d => d.status === 'termine' || d.status === 'terminee' || d.status === 'refuse');
+                } else {
+                    filtered = demandes.filter(d => d.status === currentFilter);
+                }
+            }
+
+            // Filtre par recherche
+            if (currentSearch && currentSearch.trim() !== '') {
+                const searchLower = currentSearch.toLowerCase().trim();
+                filtered = filtered.filter(d => {
+                    const name = (d.name || '').toLowerCase();
+                    const email = (d.email || '').toLowerCase();
+                    const phone = (d.phone || '').toLowerCase();
+                    return name.includes(searchLower) || email.includes(searchLower) || phone.includes(searchLower);
+                });
+            }
+
+            // Tri par priorité : nouvelles d'abord, puis urgentes, puis par date
+            filtered.sort((a, b) => {
+                // Nouvelles en premier
+                if (a.status === 'nouvelle' && b.status !== 'nouvelle') return -1;
+                if (a.status !== 'nouvelle' && b.status === 'nouvelle') return 1;
+
+                // Urgentes ensuite
+                const aUrgent = isUrgent(a.dateCreation);
+                const bUrgent = isUrgent(b.dateCreation);
+                if (aUrgent && !bUrgent) return -1;
+                if (!aUrgent && bUrgent) return 1;
+
+                // Puis par date (plus récent en premier)
+                return new Date(b.dateCreation) - new Date(a.dateCreation);
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Aucune demande</h3>
+                        <p>${currentFilter === 'all' ? 'Aucune demande de devis pour le moment.' : `Aucune demande avec le statut "${currentFilter}".`}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filtered.map(demande => {
+                const isNouvelle = demande.status === 'nouvelle';
+                const needsAction = isNouvelle;
+                const isUrgentDemande = isUrgent(demande.dateCreation);
+                const timeAgo = getTimeAgo(demande.dateCreation);
+
+                return `
+                <div class="demande-card ${demande.status} ${isUrgentDemande && isNouvelle ? 'urgent' : ''}" onclick="event.stopPropagation(); openDemandeModal('${demande.id}')" style="cursor: pointer;">
+                    <div class="demande-header">
+                        <div class="demande-info">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                <h3>${demande.name || 'Sans nom'}</h3>
+                                ${isUrgentDemande && isNouvelle ? '<span class="urgent-badge"><i class="fas fa-clock"></i> Urgent</span>' : ''}
+                            </div>
+                            <div class="date">
+                                <i class="fas fa-calendar"></i> ${formatDate(demande.dateCreation)}
+                                <span class="time-indicator">${timeAgo}</span>
+                                ${isNouvelle ? `<span class="time-badge">Nouvelle</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                            ${!isNouvelle ? `<span class="demande-status ${demande.status}">${getStatusLabel(demande.status)}</span>` : ''}
+                            ${isNouvelle ? `
+                            <button class="quick-action-btn" onclick="event.stopPropagation(); openDemandeModal('${demande.id}')" title="Envoyer un devis">
+                                <i class="fas fa-paper-plane"></i> Envoyer devis
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Gérer la réponse
+        async function handleReponse(e, id) {
+            e.preventDefault();
+            const form = e.target;
+            const devis = parseFloat(form.querySelector('input[name="devis"]').value);
+            const reponse = form.querySelector('textarea[name="reponse"]').value.trim();
+
+            if (!devis || isNaN(devis) || devis <= 0) {
+                alert('❌ Veuillez entrer un devis valide');
+                return;
+            }
+
+            try {
+                const response = await safeFetch(`/api/demandes/${id}/repondre`, {
+                    method: 'POST',
+                    body: JSON.stringify({ devis, reponse: reponse || null })
+                });
+
+                if (!response.success) {
+                    // Fallback vers localStorage
+                    const demande = demandes.find(d => d.id === id);
+                    if (demande) {
+                        demande.devis = devis;
+                        demande.reponse = reponse || null;
+                        demande.dateReponse = new Date().toISOString();
+                        demande.status = 'devis-envoye';
+                        localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                        alert('✅ Devis enregistré localement (serveur non disponible) !');
+                        loadDemandes();
+                        return;
+                    }
+                    throw new Error(response.error);
+                }
+
+                const result = response.data;
+
+                if (result.success) {
+                    alert(`✅ Devis de ${devis.toFixed(2)} € enregistré avec succès !`);
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                // Fallback vers localStorage
+                const demande = demandes.find(d => d.id === id);
+                if (demande) {
+                    demande.devis = devis;
+                    demande.reponse = reponse || null;
+                    demande.dateReponse = new Date().toISOString();
+                    demande.status = 'devis-envoye';
+                    localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                    alert(`✅ Devis de ${devis.toFixed(2)} € enregistré localement !`);
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur lors de l\'envoi du devis');
+                }
+            }
+        }
+
+        // Mettre à jour le statut
+        async function updateStatus(id, status) {
+            try {
+                const response = await safeFetch(`/api/demandes/${id}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.success) {
+                    // Fallback vers localStorage
+                    const demande = demandes.find(d => d.id === id);
+                    if (demande) {
+                        demande.status = status;
+                        localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                        loadDemandes();
+                        return;
+                    }
+                    throw new Error(response.error);
+                }
+
+                const result = response.data;
+
+                if (result.success) {
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur: ' + result.error);
+                }
+            } catch (error) {
+                if (typeof safeError !== 'undefined') {
+                    safeError('Erreur:', error);
+                } else {
+                    console.error('Erreur:', error);
+                }
+                // Fallback vers localStorage
+                const demande = demandes.find(d => d.id === id);
+                if (demande) {
+                    demande.status = status;
+                    localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur lors de la mise à jour du statut');
+                }
+            }
+        }
+
+        // Formater la date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Formater date et heure
+        function formatDateTime(date, time) {
+            if (!date) return 'N/A';
+            const dateObj = new Date(date);
+            const formattedDate = dateObj.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            return `${formattedDate} ${time || ''}`;
+        }
+
+        // Barre de recherche
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                currentSearch = this.value;
+                if (this.value.trim() !== '') {
+                    clearSearchBtn.style.display = 'flex';
+                } else {
+                    clearSearchBtn.style.display = 'none';
+                }
+                displayDemandes();
+            });
+
+            // Recherche avec Enter
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                currentSearch = '';
+                this.style.display = 'none';
+                displayDemandes();
+                searchInput.focus();
+            });
+        }
+
+        // Enregistrer le Service Worker pour la PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw-admin.js')
+                    .then((registration) => {
+                        if (typeof safeLog !== 'undefined') {
+                            safeLog('✅ Service Worker enregistré:', registration.scope);
+                        }
+                    })
+                    .catch((error) => {
+                        if (typeof safeError !== 'undefined') {
+                            safeError('❌ Erreur d\'enregistrement du Service Worker:', error);
+                        } else {
+                            console.error('❌ Erreur d\'enregistrement du Service Worker:', error);
+                        }
+                    });
+            });
+        }
+
+        // Initialisation
+        loadDemandes();
+
+        // Rafraîchir toutes les 30 secondes
+        setInterval(loadDemandes, 30000);
+
+        // Fonction pour ouvrir le modal avec les détails d'une demande
+        async function openDemandeModal(id) {
+            const demande = demandes.find(d => d.id === id);
+            if (!demande) {
+                alert('Demande non trouvée');
+                return;
+            }
+
+            const modal = document.getElementById('demandeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDetails = document.getElementById('modalDetails');
+            const responseForm = document.getElementById('responseForm');
+            const responseDisplay = document.getElementById('responseDisplay');
+            const closeBtn = document.getElementById('closeModalButton');
+            const sendBtn = document.getElementById('sendResponseButton');
+            const markAcceptedBtn = document.getElementById('markAcceptedButton');
+            const markRefusedBtn = document.getElementById('markRefusedButton');
+            const markCompletedBtn = document.getElementById('markCompletedButton');
+
+            modalTitle.textContent = `Demande de ${demande.name || 'Sans nom'}`;
+
+            // Timeline de progression
+            const timelineSteps = [
+                { status: 'nouvelle', label: 'Nouvelle demande', icon: 'fa-circle', active: demande.status === 'nouvelle' },
+                { status: 'devis-envoye', label: 'Devis envoyé', icon: 'fa-paper-plane', active: ['devis-envoye', 'accepte', 'refuse', 'termine'].includes(demande.status) },
+                { status: 'accepte', label: 'Accepté', icon: 'fa-check-circle', active: ['accepte', 'termine'].includes(demande.status) },
+                { status: 'termine', label: 'Terminé', icon: 'fa-flag-checkered', active: demande.status === 'termine' }
+            ];
+
+            modalDetails.innerHTML = `
+                <div class="workflow-timeline">
+                    ${timelineSteps.map((step, index) => `
+                        <div class="timeline-step ${step.active ? 'active' : ''} ${demande.status === step.status ? 'current' : ''}">
+                            <div class="timeline-icon">
+                                <i class="fas ${step.icon}"></i>
+                            </div>
+                            <div class="timeline-label">${step.label}</div>
+                            ${index < timelineSteps.length - 1 ? '<div class="timeline-line"></div>' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <div class="label">Client</div>
+                        <div class="value">${demande.name || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <div class="label">Email</div>
+                        <div class="value">${demande.email || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <div class="label">Téléphone</div>
+                        <div class="value">${demande.phone || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div style="flex: 1;">
+                        <div class="label">Prise en charge</div>
+                        <div class="value" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>${demande.pickup || 'N/A'}</span>
+                            ${demande.pickup ? `<button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${demande.pickup.replace(/'/g, "\\'").replace(/"/g, '\\"')}', 'Prise en charge', this)" title="Copier l'adresse">
+                                <i class="fas fa-clipboard"></i>
+                                <span style="font-size: 0.75rem; font-weight: 600;">Copier</span>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-flag-checkered"></i>
+                    <div style="flex: 1;">
+                        <div class="label">Destination</div>
+                        <div class="value" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>${demande.dropoff || 'N/A'}</span>
+                            ${demande.dropoff ? `<button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${demande.dropoff.replace(/'/g, "\\'").replace(/"/g, '\\"')}', 'Destination', this)" title="Copier l'adresse">
+                                <i class="fas fa-clipboard"></i>
+                                <span style="font-size: 0.75rem; font-weight: 600;">Copier</span>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div>
+                        <div class="label">Date</div>
+                        <div class="value">${demande.date || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <div class="label">Heure</div>
+                        <div class="value">${demande.time || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-users"></i>
+                    <div>
+                        <div class="label">Passagers</div>
+                        <div class="value">${demande.passengers || 1}</div>
+                    </div>
+                </div>
+                ${demande.message ? `
+                <div class="detail-item">
+                    <i class="fas fa-comment"></i>
+                    <div>
+                        <div class="label">Message</div>
+                        <div class="value">${demande.message}</div>
+                    </div>
+                </div>
+                ` : ''}
+                <div class="detail-item">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <div class="label">Statut</div>
+                        <div class="value status-${demande.status}">${getStatusLabel(demande.status)}</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-calendar-plus"></i>
+                    <div>
+                        <div class="label">Créée le</div>
+                        <div class="value">${formatDate(demande.dateCreation)}</div>
+                    </div>
+                </div>
+            `;
+
+            // Afficher le formulaire de réponse ou la réponse existante
+            if (demande.devis || demande.reponse) {
+                responseForm.style.display = 'none';
+                responseDisplay.style.display = 'block';
+                document.getElementById('displayDateReponse').textContent = formatDate(demande.dateReponse);
+                if (demande.devis) {
+                    document.getElementById('displayDevis').innerHTML = `<div class="devis-display"><strong>Devis :</strong> ${parseFloat(demande.devis).toFixed(2)} €</div>`;
+                } else {
+                    document.getElementById('displayDevis').innerHTML = '';
+                }
+                document.getElementById('displayReponseText').textContent = demande.reponse || '';
+
+                // Afficher le bouton de paiement Stripe si devis envoyé et pas encore payé
+                const paiementSection = document.getElementById('paiementSection');
+                if (demande.devis && demande.status === 'devis-envoye' && demande.status !== 'paye') {
+                    paiementSection.innerHTML = `
+                        <h4 style="margin-bottom: 1rem; color: #1a1a1a;">
+                            <i class="fas fa-credit-card"></i> Paiement en ligne
+                        </h4>
+                        <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+                            Créez un lien de paiement sécurisé pour que le client puisse payer en ligne. 
+                            Une facture sera automatiquement envoyée par email après le paiement.
+                        </p>
+                        <button 
+                            type="button" 
+                            class="btn btn-primary" 
+                            id="createPaymentButton"
+                            style="background: #635BFF; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"
+                        >
+                            <i class="fas fa-credit-card"></i> Créer lien de paiement Stripe
+                        </button>
+                    `;
+
+                    // Event listener pour créer le lien de paiement
+                    document.getElementById('createPaymentButton').addEventListener('click', async function () {
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création en cours...';
+
+                        try {
+                            const response = await safeFetch('/api/paiement/create-session', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    demandeId: demande.id,
+                                    amount: demande.devis
+                                })
+                            });
+
+                            if (!response.success) {
+                                throw new Error(response.error);
+                            }
+
+                            const result = response.data;
+
+                            if (result.success && result.url) {
+                                // Ouvrir le lien de paiement dans un nouvel onglet
+                                window.open(result.url, '_blank');
+
+                                // Afficher un message de confirmation
+                                paiementSection.innerHTML = `
+                                    <div style="background: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                                        <p style="color: #065f46; margin: 0;">
+                                            <i class="fas fa-check-circle"></i> 
+                                            Lien de paiement créé ! Le client peut maintenant payer en ligne.
+                                            <br>
+                                            <small style="color: #047857;">Une facture sera automatiquement envoyée par email après le paiement.</small>
+                                        </p>
+                                    </div>
+                                `;
+                            } else {
+                                throw new Error(result.error || 'Erreur lors de la création du lien de paiement');
+                            }
+                        } catch (error) {
+                            console.error('Erreur création lien paiement:', error);
+                            alert('❌ Erreur : ' + error.message + '\n\nVérifiez que Stripe est configuré dans .env');
+                            this.disabled = false;
+                            this.innerHTML = '<i class="fas fa-credit-card"></i> Créer lien de paiement Stripe';
+                        }
+                    });
+                } else {
+                    paiementSection.innerHTML = '';
+                }
+            } else {
+                responseForm.style.display = 'block';
+                responseDisplay.style.display = 'none';
+                document.getElementById('modal-devis').value = '';
+                document.getElementById('modal-reponse').value = '';
+            }
+
+            // Mettre à jour les boutons de statut
+            markAcceptedBtn.style.display = demande.status === 'devis-envoye' ? 'inline-flex' : 'none';
+            markRefusedBtn.style.display = demande.status === 'devis-envoye' ? 'inline-flex' : 'none';
+            markCompletedBtn.style.display = demande.status === 'accepte' ? 'inline-flex' : 'none';
+
+            // Event listeners
+            sendBtn.onclick = () => {
+                const devis = parseFloat(document.getElementById('modal-devis').value);
+                const reponse = document.getElementById('modal-reponse').value.trim();
+                if (!devis || isNaN(devis) || devis <= 0) {
+                    alert('❌ Veuillez entrer un devis valide');
+                    return;
+                }
+                handleReponseFromModal(id, devis, reponse);
+            };
+
+            markAcceptedBtn.onclick = () => {
+                updateStatus(id, 'accepte');
+                modal.style.display = 'none';
+            };
+            markRefusedBtn.onclick = () => {
+                updateStatus(id, 'refuse');
+                modal.style.display = 'none';
+            };
+            markCompletedBtn.onclick = () => {
+                updateStatus(id, 'termine');
+                modal.style.display = 'none';
+            };
+
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+
+            modal.style.display = 'flex';
+        }
+
+        // Fonction pour copier une adresse dans le presse-papiers
+        function copyToClipboard(text, label, buttonElement) {
+            if (!text || text === 'N/A') {
+                return;
+            }
+
+            // Utiliser l'API Clipboard moderne si disponible
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopyNotification(`${label} copiée !`);
+                    if (buttonElement) {
+                        animateCopyButton(buttonElement);
+                    }
+                }).catch(err => {
+                    if (typeof safeError !== 'undefined') {
+                        safeError('Erreur lors de la copie:', err);
+                    } else {
+                        console.error('Erreur lors de la copie:', err);
+                    }
+                    fallbackCopyToClipboard(text, label, buttonElement);
+                });
+            } else {
+                // Fallback pour les navigateurs plus anciens
+                fallbackCopyToClipboard(text, label, buttonElement);
+            }
+        }
+
+        // Animer le bouton de copie après la copie
+        function animateCopyButton(button) {
+            if (!button) return;
+
+            const icon = button.querySelector('i');
+            const textSpan = button.querySelector('span');
+
+            // Changer l'icône et le texte
+            if (icon) {
+                icon.className = 'fas fa-check';
+            }
+            if (textSpan) {
+                textSpan.textContent = 'Copié !';
+            }
+
+            // Ajouter la classe "copied"
+            button.classList.add('copied');
+
+            // Revenir à l'état initial après 2 secondes
+            setTimeout(() => {
+                if (icon) {
+                    icon.className = 'fas fa-clipboard';
+                }
+                if (textSpan) {
+                    textSpan.textContent = 'Copier';
+                }
+                button.classList.remove('copied');
+            }, 2000);
+        }
+
+        // Méthode de fallback pour copier
+        function fallbackCopyToClipboard(text, label, buttonElement) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showCopyNotification(`${label} copiée !`);
+                if (buttonElement) {
+                    animateCopyButton(buttonElement);
+                }
+            } catch (err) {
+                if (typeof safeError !== 'undefined') {
+                    safeError('Erreur lors de la copie:', err);
+                } else {
+                    console.error('Erreur lors de la copie:', err);
+                }
+                alert(`Impossible de copier. Adresse: ${text}`);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Afficher une notification de copie
+        function showCopyNotification(message) {
+            // Créer ou réutiliser une notification
+            let notification = document.getElementById('copyNotification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'copyNotification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #10b981;
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-weight: 600;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                document.body.appendChild(notification);
+            }
+
+            notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            notification.style.display = 'flex';
+
+            // Masquer après 2 secondes
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 300);
+            }, 2000);
+        }
+
+        // Ajouter les animations CSS pour la notification
+        if (!document.getElementById('copyNotificationStyles')) {
+            const style = document.createElement('style');
+            style.id = 'copyNotificationStyles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Fonction pour gérer la réponse depuis le modal
+        async function handleReponseFromModal(id, devis, reponse) {
+            try {
+                const response = await safeFetch(`/api/demandes/${id}/repondre`, {
+                    method: 'POST',
+                    body: JSON.stringify({ devis, reponse: reponse || null })
+                });
+
+                if (!response.success) {
+                    // Fallback vers localStorage
+                    const demande = demandes.find(d => d.id === id);
+                    if (demande) {
+                        demande.devis = devis;
+                        demande.reponse = reponse || null;
+                        demande.dateReponse = new Date().toISOString();
+                        demande.status = 'devis-envoye';
+                        localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                        alert('✅ Devis enregistré localement (serveur non disponible) !');
+                        document.getElementById('demandeModal').style.display = 'none';
+                        loadDemandes();
+                        return;
+                    }
+                    throw new Error(response.error);
+                }
+
+                const result = response.data;
+
+                if (result.success) {
+                    alert(`✅ Devis de ${devis.toFixed(2)} € enregistré avec succès !`);
+                    document.getElementById('demandeModal').style.display = 'none';
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                // Fallback vers localStorage
+                const demande = demandes.find(d => d.id === id);
+                if (demande) {
+                    demande.devis = devis;
+                    demande.reponse = reponse || null;
+                    demande.dateReponse = new Date().toISOString();
+                    demande.status = 'devis-envoye';
+                    localStorage.setItem('demandes_devis', JSON.stringify(demandes));
+                    alert(`✅ Devis de ${devis.toFixed(2)} € enregistré localement !`);
+                    document.getElementById('demandeModal').style.display = 'none';
+                    loadDemandes();
+                } else {
+                    alert('❌ Erreur lors de l\'envoi du devis');
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // Admin Navbar JavaScript - Simplified (no mobile menu needed)
+        (function () {
+            'use strict';
+            // Navbar functionality can be added here if needed in the future
+        })();
+    </script>
+</body>
+
+</html>

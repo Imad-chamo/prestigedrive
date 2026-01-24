@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PrestigeDrive Admin">
+    <meta name="description" content="Interface d'administration PrestigeDrive">
+    <title>Connexion - Interface Chauffeur PrestigeDrive</title>
+    <link rel="manifest" href="manifest-admin.json">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    <link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #D4AF37, #f5d76e, #D4AF37);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #D4AF37, #b8941f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .login-header .logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .login-header h1 {
+            color: #1a1a1a;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            color: #1a1a1a;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group label i {
+            color: #D4AF37;
+        }
+
+        .form-group input {
+            padding: 1rem 1.25rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #D4AF37;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .password-toggle {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: #D4AF37;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #D4AF37 0%, #b8941f 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+            background: linear-gradient(135deg, #b8941f 0%, #D4AF37 100%);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .login-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #ef4444;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .back-link a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #D4AF37;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Styles pour l'application installée */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        /* Amélioration mobile pour PWA */
+        @media (max-width: 768px) {
+            .login-container {
+                border-radius: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h1>Interface Chauffeur</h1>
+            <p>Connectez-vous pour accéder au tableau de bord</p>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText"></span>
+        </div>
+
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="username">
+                    <i class="fas fa-user"></i> Nom d'utilisateur
+                </label>
+                <input type="text" id="username" name="username" placeholder="Entrez votre nom d'utilisateur" required
+                    autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i> Mot de passe
+                </label>
+                <div class="password-toggle">
+                    <input type="password" id="password" name="password" placeholder="Entrez votre mot de passe"
+                        required autocomplete="current-password">
+                    <button type="button" class="password-toggle-btn" id="togglePassword"
+                        aria-label="Afficher/Masquer le mot de passe">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: -0.5rem;">
+                <a href="#" id="forgotPasswordLink"
+                    style="color: #64748b; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem; transition: color 0.3s ease;">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Mot de passe oublié ?</span>
+                </a>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Se connecter</span>
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">
+                <i class="fas fa-arrow-left"></i>
+                Retour au site
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal Mot de passe oublié -->
+    <div id="forgotPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <span class="close-button" id="closeForgotModal">&times;</span>
+            <h2 style="color: #D4AF37; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-key"></i> Mot de passe oublié
+            </h2>
+            <div id="forgotPasswordContent">
+                <p style="color: #64748b; margin-bottom: 1.5rem;">
+                    Entrez votre nom d'utilisateur pour réinitialiser votre mot de passe.
+                </p>
+                <div class="form-group">
+                    <label for="forgotUsername">
+                        <i class="fas fa-user"></i> Nom d'utilisateur
+                    </label>
+                    <input type="text" id="forgotUsername" placeholder="Entrez votre nom d'utilisateur"
+                        autocomplete="username">
+                </div>
+                <button type="button" class="login-btn" id="recoverPasswordBtn" style="width: 100%; margin-top: 1rem;">
+                    <i class="fas fa-unlock"></i>
+                    <span>Vérifier</span>
+                </button>
+            </div>
+            <div id="resetPasswordContent" style="display: none;">
+                <p style="color: #64748b; margin-bottom: 1.5rem;">
+                    Créez un nouveau mot de passe sécurisé.
+                </p>
+                <div class="form-group">
+                    <label for="newPassword">
+                        <i class="fas fa-lock"></i> Nouveau mot de passe
+                    </label>
+                    <div class="password-toggle">
+                        <input type="password" id="newPassword" placeholder="Entrez votre nouveau mot de passe"
+                            autocomplete="new-password" minlength="6">
+                        <button type="button" class="password-toggle-btn" id="toggleNewPassword"
+                            aria-label="Afficher/Masquer le mot de passe">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock"></i> Confirmer le mot de passe
+                    </label>
+                    <div class="password-toggle">
+                        <input type="password" id="confirmPassword" placeholder="Confirmez votre nouveau mot de passe"
+                            autocomplete="new-password" minlength="6">
+                        <button type="button" class="password-toggle-btn" id="toggleConfirmPassword"
+                            aria-label="Afficher/Masquer le mot de passe">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="login-btn" id="resetPasswordBtn" style="width: 100%; margin-top: 1rem;">
+                    <i class="fas fa-key"></i>
+                    <span>Réinitialiser le mot de passe</span>
+                </button>
+            </div>
+            <div id="passwordResetSuccess" style="display: none;">
+                <div
+                    style="background: #d1fae5; border-left: 4px solid #10b981; padding: 1.5rem; border-radius: 10px; margin-top: 1rem; text-align: center;">
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
+                    <h3 style="color: #065f46; margin-bottom: 0.5rem;">Mot de passe réinitialisé !</h3>
+                    <p style="color: #047857; margin-bottom: 1.5rem;">Votre mot de passe a été modifié avec succès.</p>
+                    <button type="button" class="login-btn" id="goToLoginBtn" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Se connecter</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 2rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #D4AF37;
+            text-decoration: none;
+        }
+
+        #forgotPasswordLink:hover {
+            color: #D4AF37;
+        }
+    </style>
+
+    <script>
+        // Vérifier si déjà connecté
+        if (localStorage.getItem('chauffeur_authenticated') === 'true') {
+            window.location.href = 'chauffeur.html';
+        }
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+
+        // Gestion du formulaire de connexion
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Masquer l'erreur précédente
+            errorMessage.classList.remove('show');
+
+            // Validation
+            if (!username || !password) {
+                showError('Veuillez remplir tous les champs');
+                return;
+            }
+
+            // Afficher le loading
+            loginBtn.classList.add('loading');
+            loginBtn.disabled = true;
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner"></i> <span>Connexion...</span>';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Authentification réussie
+                    localStorage.setItem('chauffeur_authenticated', 'true');
+                    localStorage.setItem('chauffeur_token', data.token);
+                    localStorage.setItem('chauffeur_username', data.username);
+                    localStorage.setItem('chauffeur_login_time', new Date().toISOString());
+
+                    // Rediriger vers l'interface chauffeur
+                    window.location.href = 'chauffeur.html';
+                } else {
+                    // Erreur d'authentification
+                    showError(data.error || 'Identifiants incorrects');
+                    loginBtn.classList.remove('loading');
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showError('Erreur de connexion au serveur');
+                loginBtn.classList.remove('loading');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = originalText;
+            }
+        });
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+
+            // Masquer l'erreur après 5 secondes
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        // Gestion du mot de passe oublié (sécurisé - réinitialisation)
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const closeForgotModal = document.getElementById('closeForgotModal');
+        const recoverPasswordBtn = document.getElementById('recoverPasswordBtn');
+        const forgotPasswordContent = document.getElementById('forgotPasswordContent');
+        const resetPasswordContent = document.getElementById('resetPasswordContent');
+        const passwordResetSuccess = document.getElementById('passwordResetSuccess');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+        const goToLoginBtn = document.getElementById('goToLoginBtn');
+        const toggleNewPassword = document.getElementById('toggleNewPassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        let currentUsername = '';
+
+        // Toggle password visibility pour les nouveaux champs
+        if (toggleNewPassword) {
+            toggleNewPassword.addEventListener('click', function () {
+                const newPasswordInput = document.getElementById('newPassword');
+                const type = newPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                newPasswordInput.setAttribute('type', type);
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        if (toggleConfirmPassword) {
+            toggleConfirmPassword.addEventListener('click', function () {
+                const confirmPasswordInput = document.getElementById('confirmPassword');
+                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPasswordInput.setAttribute('type', type);
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        forgotPasswordLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            forgotPasswordModal.style.display = 'flex';
+            document.getElementById('forgotUsername').focus();
+        });
+
+        function resetModal() {
+            forgotPasswordModal.style.display = 'none';
+            passwordResetSuccess.style.display = 'none';
+            resetPasswordContent.style.display = 'none';
+            forgotPasswordContent.style.display = 'block';
+            document.getElementById('forgotUsername').value = '';
+            if (document.getElementById('newPassword')) {
+                document.getElementById('newPassword').value = '';
+            }
+            if (document.getElementById('confirmPassword')) {
+                document.getElementById('confirmPassword').value = '';
+            }
+            currentUsername = '';
+        }
+
+        closeForgotModal.addEventListener('click', function () {
+            resetModal();
+        });
+
+        window.addEventListener('click', function (event) {
+            if (event.target === forgotPasswordModal) {
+                resetModal();
+            }
+        });
+
+        recoverPasswordBtn.addEventListener('click', function () {
+            const username = document.getElementById('forgotUsername').value.trim();
+
+            if (!username) {
+                showError('Veuillez entrer votre nom d\'utilisateur');
+                return;
+            }
+
+            // Vérifier si le nom d'utilisateur existe
+            if (username === DEFAULT_CREDENTIALS.username) {
+                currentUsername = username;
+                forgotPasswordContent.style.display = 'none';
+                resetPasswordContent.style.display = 'block';
+                document.getElementById('newPassword').focus();
+            } else {
+                showError('Nom d\'utilisateur introuvable');
+            }
+        });
+
+        resetPasswordBtn.addEventListener('click', function () {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!newPassword || newPassword.length < 6) {
+                showError('Le mot de passe doit contenir au moins 6 caractères');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showError('Les mots de passe ne correspondent pas');
+                return;
+            }
+
+            // Sauvegarder le nouveau mot de passe dans localStorage
+            localStorage.setItem('chauffeur_password', newPassword);
+
+            // Mettre à jour les credentials pour cette session
+            DEFAULT_CREDENTIALS.password = newPassword;
+
+            // Afficher le message de succès
+            resetPasswordContent.style.display = 'none';
+            passwordResetSuccess.style.display = 'block';
+        });
+
+        if (goToLoginBtn) {
+            goToLoginBtn.addEventListener('click', function () {
+                resetModal();
+                // Le mot de passe est déjà mis à jour dans DEFAULT_CREDENTIALS
+            });
+        }
+
+        // Focus sur le premier champ au chargement
+        document.getElementById('username').focus();
+
+        // Enregistrer le Service Worker pour la PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw-admin.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker enregistré:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Erreur d\'enregistrement du Service Worker:', error);
+                    });
+            });
+        }
+
+        // Gérer l'installation de l'application
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            const installBtn = document.createElement('button');
+            installBtn.textContent = '📱 Installer l\'app';
+            installBtn.className = 'install-btn';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #D4AF37, #b8941f);
+                color: white;
+                border: none;
+                padding: 1rem 1.5rem;
+                border-radius: 50px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+                z-index: 1000;
+                display: none;
+            `;
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`Résultat de l'installation: ${outcome}`);
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+            document.body.appendChild(installBtn);
+            setTimeout(() => {
+                if (deferredPrompt) {
+                    installBtn.style.display = 'block';
+                }
+            }, 3000);
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ Application installée');
+            const installBtn = document.querySelector('.install-btn');
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>
