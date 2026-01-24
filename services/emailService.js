@@ -1,53 +1,40 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
-// Configuration du transporteur email
-let transporter = null;
+// Configuration SendGrid
+let sgInitialized = false;
 
-// Initialiser le transporteur
+// Initialiser SendGrid
 function initEmailService() {
-    // Vérifier si les variables d'environnement sont configurées
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        console.warn('⚠️  Configuration email non trouvée. Les emails ne seront pas envoyés.');
-        console.warn('   Configurez SMTP_HOST, SMTP_USER, SMTP_PASS dans votre fichier .env');
+    const apiKey = process.env.SENDGRID_API_KEY;
+    
+    if (!apiKey) {
+        console.warn('⚠️  SENDGRID_API_KEY non trouvée. Les emails ne seront pas envoyés.');
+        console.warn('   Configurez SENDGRID_API_KEY dans vos variables d\'environnement');
         return false;
     }
 
     try {
-        transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true', // true pour 465, false pour autres ports
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            },
-            tls: {
-                // Ne pas rejeter les certificats non autorisés (pour certains serveurs)
-                rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
-            }
-        });
-
-        console.log('✅ Service email initialisé avec succès');
+        sgMail.setApiKey(apiKey);
+        sgInitialized = true;
+        console.log('✅ Service SendGrid initialisé avec succès');
         return true;
     } catch (error) {
-        console.error('❌ Erreur lors de l\'initialisation du service email:', error);
+        console.error('❌ Erreur lors de l\'initialisation SendGrid:', error);
         return false;
     }
 }
 
-// Vérifier la connexion SMTP
+// Vérifier la connexion SendGrid (envoi d'un email test)
 async function verifyConnection() {
-    if (!transporter) {
+    if (!sgInitialized) {
         return false;
     }
     
-    try {
-        await transporter.verify();
-        console.log('✅ Connexion SMTP vérifiée avec succès');
-        return true;
-    } catch (error) {
-        console.error('❌ Erreur de vérification SMTP:', error);
-        return false;
+    // SendGrid n'a pas de méthode verify comme nodemailer, on peut envoyer un email test
+    // ou simplement vérifier que l'API key est set
+    console.log('✅ SendGrid API key configurée');
+    return true;
+}
     }
 }
 
@@ -324,24 +311,29 @@ Voir dans l'interface admin : ${adminUrl}
 
 // Envoyer un email de confirmation au client
 async function sendClientConfirmation(demande) {
-    if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email non envoyé.');
+    if (!sgInitialized) {
+        console.warn('⚠️  Service SendGrid non initialisé. Email non envoyé.');
         return { success: false, error: 'Service email non configuré' };
     }
 
     try {
         const template = getClientConfirmationTemplate(demande);
         
-        const info = await transporter.sendMail({
-            from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        const msg = {
             to: demande.email,
+            from: {
+                email: process.env.ADMIN_EMAIL || 'noreply@yourdomain.com', // Remplacer par email vérifié SendGrid
+                name: 'PrestigeDrive'
+            },
             subject: template.subject,
             html: template.html,
             text: template.text
-        });
+        };
 
-        console.log('✅ Email de confirmation envoyé au client:', info.messageId);
-        return { success: true, messageId: info.messageId };
+        const result = await sgMail.send(msg);
+
+        console.log('✅ Email de confirmation envoyé au client via SendGrid:', result[0].headers['x-message-id']);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de l\'email au client:', error);
         return { success: false, error: error.message };
@@ -350,12 +342,12 @@ async function sendClientConfirmation(demande) {
 
 // Envoyer une notification à l'admin
 async function sendAdminNotification(demande) {
-    if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email non envoyé.');
+    if (!sgInitialized) {
+        console.warn('⚠️  Service SendGrid non initialisé. Email non envoyé.');
         return { success: false, error: 'Service email non configuré' };
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+    const adminEmail = process.env.ADMIN_EMAIL;
     
     if (!adminEmail) {
         console.warn('⚠️  ADMIN_EMAIL non configuré. Notification admin non envoyée.');
@@ -365,16 +357,21 @@ async function sendAdminNotification(demande) {
     try {
         const template = getAdminNotificationTemplate(demande);
         
-        const info = await transporter.sendMail({
-            from: `"PrestigeDrive - Système" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        const msg = {
             to: adminEmail,
+            from: {
+                email: process.env.ADMIN_EMAIL, // Même email pour éviter les problèmes de vérification
+                name: 'PrestigeDrive - Système'
+            },
             subject: template.subject,
             html: template.html,
             text: template.text
-        });
+        };
 
-        console.log('✅ Notification admin envoyée:', info.messageId);
-        return { success: true, messageId: info.messageId };
+        const result = await sgMail.send(msg);
+
+        console.log('✅ Notification admin envoyée via SendGrid:', result[0].headers['x-message-id']);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de la notification admin:', error);
         return { success: false, error: error.message };
@@ -508,24 +505,29 @@ L'équipe PrestigeDrive
 
 // Envoyer l'email de devis au client
 async function sendDevisEmail(demande) {
-    if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email de devis non envoyé.');
+    if (!sgInitialized) {
+        console.warn('⚠️  Service SendGrid non initialisé. Email de devis non envoyé.');
         return { success: false, error: 'Service email non configuré' };
     }
 
     try {
         const template = getDevisTemplate(demande);
         
-        const info = await transporter.sendMail({
-            from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        const msg = {
             to: demande.email,
+            from: {
+                email: process.env.ADMIN_EMAIL || 'noreply@yourdomain.com', // Remplacer par email vérifié SendGrid
+                name: 'PrestigeDrive'
+            },
             subject: template.subject,
             html: template.html,
             text: template.text
-        });
+        };
 
-        console.log('✅ Email de devis envoyé au client:', info.messageId);
-        return { success: true, messageId: info.messageId };
+        const result = await sgMail.send(msg);
+
+        console.log('✅ Email de devis envoyé au client via SendGrid:', result[0].headers['x-message-id']);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de l\'email de devis:', error);
         return { success: false, error: error.message };

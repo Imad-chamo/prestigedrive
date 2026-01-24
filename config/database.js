@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Debug: Vérifier si MONGODB_URI est chargé
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
+
 // Configuration de la connexion MongoDB
 const connectDB = async () => {
     try {
