@@ -709,14 +709,6 @@ connectDB().then(async () => {
         }
     });
 }).catch((error) => {
-    console.error('❌ Erreur de connexion MongoDB, démarrage en mode dégradé:', error.message);
-    // Démarrer quand même le serveur sans MongoDB pour le débogage
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚗 Serveur VTC démarré en mode dégradé sur http://0.0.0.0:${PORT} (sans MongoDB)`);
-        console.log(`📋 Interface chauffeur: http://localhost:${PORT}/chauffeur.html`);
-        console.log(`🌐 Site principal: http://localhost:${PORT}/index.html`);
-        console.log(`🔒 Rate limiting: ${RATE_LIMIT_MAX} requêtes/${RATE_LIMIT_WINDOW / 1000}s par IP`);
-        console.log(`🗄️ Base de données: Non connectée`);
-        console.log(`📧 Service email: Non configuré (voir .env)`);
-    });
+    console.error('❌ Impossible de démarrer le serveur:', error);
+    process.exit(1);
 });
