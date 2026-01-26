@@ -543,6 +543,7 @@ select:focus-visible {
 
 
 /* Hero Section - Beautiful Presentation */
+/* Hero Section - Priorité Maximale */
 .hero {
     min-height: 100vh;
     display: flex;
@@ -551,7 +552,7 @@ select:focus-visible {
     color: white;
     position: relative;
     overflow: hidden;
-    padding: 4rem 0 3rem;
+    padding: 5rem 0 4rem;
     /* contain: layout style paint; */
     /* transform: translateZ(0); */
 }
@@ -1725,8 +1726,9 @@ select:focus-visible {
 }
 
 /* Section Réservation */
+/* Reservation Section - Priorité Haute (Conversion) */
 .reservation {
-    padding: 4rem 0;
+    padding: 5.5rem 0;
     background: #f8fafc;
 }
 
@@ -2503,16 +2505,16 @@ form .form-row .form-group,
     line-height: 1.6;
 }
 
-/* Services Section */
+/* Services Section - Priorité Haute */
 .services {
-    padding: 4rem 0;
+    padding: 5rem 0;
     background: #f8fafc;
     position: relative;
 }
 
 .services-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem;
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
@@ -2629,7 +2631,7 @@ form .form-row .form-group,
 .services-grid-premium {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
+    gap: 1.75rem;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -2915,9 +2917,9 @@ form .form-row .form-group,
     padding: 0 1.5rem;
 }
 
-/* Pricing Section */
+/* Pricing Section - Priorité Moyenne-Haute */
 .pricing {
-    padding: 3rem 0 4rem 0;
+    padding: 5rem 0;
     background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f8fafc 100%);
     position: relative;
     overflow: hidden;
@@ -2947,7 +2949,7 @@ form .form-row .form-group,
 
 .pricing-header {
     text-align: center;
-    margin-bottom: 5rem;
+    margin-bottom: 4rem;
     position: relative;
     z-index: 1;
 }
@@ -3039,7 +3041,7 @@ form .form-row .form-group,
 .forfait-grid-premium {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.2rem;
+    gap: 1.5rem;
 }
 
 .forfait-card-premium {
@@ -3280,7 +3282,7 @@ form .form-row .form-group,
 .tarif-km-grid-premium {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: 1.25rem;
     max-width: 600px;
     margin: 0 auto;
 }
@@ -4122,16 +4124,16 @@ form .form-row .form-group,
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
 }
 
-/* About Section */
+/* About Section - Priorité Moyenne */
 .about {
-    padding: 4rem 0;
+    padding: 4.5rem 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     color: #1e293b;
 }
 
 .about-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem;
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
@@ -4340,16 +4342,16 @@ form .form-row .form-group,
     margin-top: auto;
 }
 
-/* Contact Section */
+/* Contact Section - Priorité Moyenne */
 .contact {
-    padding: 4rem 0;
+    padding: 4.5rem 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     color: #1e293b;
 }
 
 .contact-header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem;
 }
 
 .contact-header .section-title {
@@ -5107,6 +5109,47 @@ form .form-row .form-group,
 }
 
 @media (max-width: 768px) {
+    /* Optimisation espacements sections sur mobile */
+    .hero {
+        padding: 3.5rem 0 2.5rem;
+    }
+    
+    .services {
+        padding: 3.5rem 0;
+    }
+    
+    .services-header {
+        margin-bottom: 2.5rem;
+    }
+    
+    .pricing {
+        padding: 3.5rem 0;
+    }
+    
+    .pricing-header {
+        margin-bottom: 3rem;
+    }
+    
+    .reservation {
+        padding: 3.5rem 0;
+    }
+    
+    .about {
+        padding: 3.5rem 0;
+    }
+    
+    .about-header {
+        margin-bottom: 2.5rem;
+    }
+    
+    .contact {
+        padding: 3.5rem 0;
+    }
+    
+    .contact-header {
+        margin-bottom: 2.5rem;
+    }
+    
     .hero-container {
         grid-template-columns: 1fr;
         gap: 2rem;
@@ -6246,7 +6289,7 @@ html {
     }
 }
 
-/* ===== SECTION TÉMOIGNAGES ===== */
+/* ===== SECTION TÉMOIGNAGES - Priorité Basse ===== */
 .testimonials-section {
     padding: 4rem 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -6264,14 +6307,14 @@ html {
 
 .testimonials-carousel-track {
     display: flex;
-    gap: 2rem;
+    gap: 2.25rem;
     /* animation: scroll-testimonials 120s linear infinite; */
     width: fit-content;
 }
 
 .testimonials-carousel-slide {
     display: flex;
-    gap: 2rem;
+    gap: 2.25rem;
     flex-shrink: 0;
 }
 
@@ -6300,7 +6343,7 @@ html {
 .testimonials-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2rem;
+    gap: 2.25rem;
     margin-bottom: 4rem;
 }
 
@@ -6424,7 +6467,7 @@ html {
     margin: 0;
 }
 
-/* ===== SECTION FAQ ===== */
+/* ===== SECTION FAQ - Priorité Basse ===== */
 .faq-section {
     padding: 4rem 0;
     background: white;
@@ -6436,7 +6479,7 @@ html {
 }
 
 .faq-item {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -6544,10 +6587,15 @@ html {
 
 /* Responsive Témoignages & FAQ */
 @media (max-width: 768px) {
+    .testimonials-section {
+        padding: 3rem 0;
+    }
+    
     .testimonials-carousel-wrapper {
         mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
         padding: 1rem 0;
+        margin-bottom: 3rem;
     }
     
     .testimonials-carousel-track {
@@ -6571,6 +6619,7 @@ html {
     .testimonials-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+        margin-bottom: 3rem;
     }
     
     .testimonials-stats {
@@ -6582,9 +6631,22 @@ html {
         font-size: 2.5rem;
     }
     
+    .faq-section {
+        padding: 3rem 0;
+    }
+    
+    .faq-item {
+        margin-bottom: 1rem;
+    }
+    
     .faq-question {
         font-size: 0.95rem;
         padding: 1.25rem;
+    }
+    
+    .faq-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
     }
 }
 
