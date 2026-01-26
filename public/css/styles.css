@@ -5353,7 +5353,7 @@ form .form-row .form-group,
     .services-grid,
     .services-grid-premium {
         grid-template-columns: 1fr;
-        gap: 1rem !important;
+        gap: 0.75rem !important;
     }
     
     .service-card-premium {
@@ -5364,76 +5364,76 @@ form .form-row .form-group,
     }
     
     .service-card-header {
-        padding: 0.6rem 0.6rem 0.4rem !important;
+        padding: 0.5rem 0.5rem 0.35rem !important;
     }
     
     .service-card-body {
-        padding: 0 0.6rem 0.6rem !important;
+        padding: 0 0.5rem 0.5rem !important;
     }
     
     .service-card-footer {
-        padding: 0.6rem !important;
+        padding: 0.5rem !important;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.4rem !important;
+        gap: 0.3rem !important;
     }
     
     .service-cta-btn {
         width: 100%;
         justify-content: center;
-        padding: 0.45rem 0.6rem !important;
-        font-size: 0.7rem !important;
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.65rem !important;
         border-radius: 6px !important;
     }
     
     .service-icon-premium {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 0.95rem !important;
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.85rem !important;
         border-radius: 8px !important;
     }
     
     .service-card-body h3 {
-        font-size: 0.85rem !important;
-        margin-bottom: 0.3rem !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
         line-height: 1.2 !important;
     }
     
     .service-card-body p {
-        font-size: 0.7rem !important;
-        margin-bottom: 0.5rem !important;
+        font-size: 0.65rem !important;
+        margin-bottom: 0.4rem !important;
         line-height: 1.3 !important;
     }
     
     .service-features-list {
-        gap: 0.25rem !important;
+        gap: 0.2rem !important;
     }
     
     .service-features-list li {
-        font-size: 0.65rem !important;
-        padding: 0.1rem 0 !important;
+        font-size: 0.6rem !important;
+        padding: 0.05rem 0 !important;
     }
     
     .service-features-list li i {
-        font-size: 0.65rem !important;
+        font-size: 0.6rem !important;
     }
     
     .service-badge-premium {
-        padding: 0.25rem 0.6rem !important;
-        font-size: 0.6rem !important;
-        border-radius: 12px !important;
+        padding: 0.2rem 0.5rem !important;
+        font-size: 0.55rem !important;
+        border-radius: 10px !important;
     }
     
     .price-amount {
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
     }
     
     .price-from {
-        font-size: 0.6rem !important;
+        font-size: 0.55rem !important;
     }
     
     .service-price-tag {
-        gap: 0.1rem !important;
+        gap: 0.08rem !important;
     }
     
     .about-stats-modern {
