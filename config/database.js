@@ -18,7 +18,9 @@ const connectDB = async () => {
     } catch (error) {
         console.error('❌ Erreur de connexion MongoDB:', error.message);
         console.error('💡 Vérifiez votre MONGODB_URI dans le fichier .env');
-        process.exit(1);
+        console.warn('⚠️ Continuation sans MongoDB pour le débogage...');
+        // process.exit(1); // Commenté temporairement pour le débogage
+        return null; // Retourner null au lieu de quitter
     }
 };
 
