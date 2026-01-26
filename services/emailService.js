@@ -46,7 +46,8 @@ async function verifyConnection() {
         console.log('✅ Connexion SMTP vérifiée avec succès');
         return true;
     } catch (error) {
-        console.error('❌ Erreur de vérification SMTP:', error);
+        console.error('❌ Erreur de vérification SMTP:', error.message);
+        // Ne pas relancer l'erreur pour éviter de planter le serveur
         return false;
     }
 }

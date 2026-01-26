@@ -654,7 +654,7 @@ app.get('/gallery/*', (req, res, next) => {
 });
 
 // Servir les fichiers statiques (APRÈS les routes API)
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Route pour la page d'accueil
 app.get('/', (req, res) => {
