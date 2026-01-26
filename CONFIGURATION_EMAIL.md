@@ -36,7 +36,31 @@ SMTP_FROM=votre-email@gmail.com
 ADMIN_EMAIL=votre-email@gmail.com
 ```
 
-**Important pour Gmail** : Vous devez utiliser un [mot de passe d'application](https://support.google.com/accounts/answer/185833) et non votre mot de passe Gmail normal.
+**⚠️ IMPORTANT pour Gmail** : Vous DEVEZ utiliser un **mot de passe d'application**, pas votre mot de passe Gmail normal.
+
+#### Comment créer un mot de passe d'application Gmail :
+
+1. **Activez la validation en 2 étapes** (obligatoire) :
+   - Allez sur [Google Account](https://myaccount.google.com/)
+   - Cliquez sur **Sécurité** dans le menu de gauche
+   - Sous "Connexion à Google", cliquez sur **Validation en deux étapes**
+   - Suivez les instructions pour l'activer (si ce n'est pas déjà fait)
+
+2. **Créez un mot de passe d'application** :
+   - Toujours dans **Sécurité** → **Validation en deux étapes**
+   - Faites défiler jusqu'à **Mots de passe des applications**
+   - Cliquez sur **Mots de passe des applications**
+   - Sélectionnez **Application** : "Mail"
+   - Sélectionnez **Appareil** : "Autre (nom personnalisé)"
+   - Entrez un nom (ex: "PrestigeDrive VTC")
+   - Cliquez sur **Générer**
+   - **Copiez le mot de passe de 16 caractères** (vous ne pourrez plus le voir après)
+
+3. **Utilisez ce mot de passe dans votre `.env`** :
+   - Collez le mot de passe de 16 caractères dans `SMTP_PASS`
+   - **Ne mettez PAS votre mot de passe Gmail normal**
+
+**Erreur "Invalid login" ?** → Vous utilisez probablement votre mot de passe Gmail au lieu d'un mot de passe d'application. Suivez les étapes ci-dessus.
 
 ### Outlook / Office 365
 
@@ -142,10 +166,17 @@ Vous devriez voir :
 - Vérifiez que le fichier `.env` est à la racine du projet
 - Sur Railway, vérifiez que les variables sont bien ajoutées dans l'onglet Variables
 
-### Erreur : "Invalid login"
-- Vérifiez votre nom d'utilisateur et mot de passe
-- Pour Gmail, utilisez un mot de passe d'application
-- Vérifiez que l'authentification à deux facteurs est activée (pour Gmail)
+### Erreur : "Invalid login" (535-5.7.8 Username and Password not accepted)
+
+**Pour Gmail** : Cette erreur signifie que vous utilisez votre mot de passe Gmail normal au lieu d'un mot de passe d'application.
+
+**Solution** :
+1. ✅ Activez la validation en 2 étapes sur votre compte Google
+2. ✅ Créez un mot de passe d'application (voir section Gmail ci-dessus)
+3. ✅ Utilisez ce mot de passe de 16 caractères dans `SMTP_PASS`
+4. ✅ Vérifiez que `SMTP_USER` est votre adresse Gmail complète (ex: `votre-email@gmail.com`)
+
+**Important** : Le mot de passe d'application est différent de votre mot de passe Gmail. Il ressemble à : `abcd efgh ijkl mnop` (16 caractères avec espaces, mais utilisez-le sans espaces dans `.env`)
 
 ### Erreur : "Connection timeout"
 - Vérifiez que le port est correct (587 pour TLS, 465 pour SSL)
