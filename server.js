@@ -627,6 +627,32 @@ if (process.env.STRIPE_SECRET_KEY) {
     });
 }
 
+// Route spéciale pour les icônes avec headers anti-cache
+app.get('/icons/*', (req, res, next) => {
+    // Headers pour forcer le rechargement des icônes
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin'
+    });
+    next();
+});
+
+// Route spéciale pour les images gallery avec headers anti-cache
+app.get('/gallery/*', (req, res, next) => {
+    // Headers pour forcer le rechargement des images
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin'
+    });
+    next();
+});
+
 // Servir les fichiers statiques (APRÈS les routes API)
 app.use(express.static('public'));
 
