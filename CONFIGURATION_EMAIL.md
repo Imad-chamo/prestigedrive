@@ -144,9 +144,19 @@ ADMIN_EMAIL=votre-email@gmail.com
 Après avoir configuré les variables, testez la configuration :
 
 ```bash
-# Tester la configuration email
-node scripts/test-email.js
+# Test simple
+npm run test-email
+
+# Diagnostic avancé (recommandé en cas de problème)
+npm run diagnostic-email
 ```
+
+Le script de diagnostic avancé va :
+- ✅ Vérifier toutes les variables d'environnement
+- ✅ Analyser la configuration SMTP
+- ✅ Tester la connexion
+- ✅ Envoyer un email de test
+- ✅ Fournir des solutions spécifiques en cas d'erreur
 
 Ou redémarrez le serveur et vérifiez les logs :
 
@@ -178,6 +188,11 @@ Vous devriez voir :
 
 **Important** : Le mot de passe d'application est différent de votre mot de passe Gmail. Il ressemble à : `abcd efgh ijkl mnop` (16 caractères avec espaces, mais utilisez-le sans espaces dans `.env`)
 
+**Si le problème persiste avec Gmail** :
+- ⚠️ Gmail peut bloquer les connexions depuis certains serveurs
+- 💡 **Solution recommandée** : Utilisez un service d'email transactionnel comme SendGrid ou Mailgun (gratuit jusqu'à 100 emails/jour)
+- 💡 Voir section "Alternatives à Gmail" ci-dessous
+
 ### Erreur : "Connection timeout"
 - Vérifiez que le port est correct (587 pour TLS, 465 pour SSL)
 - Vérifiez que `SMTP_SECURE` est correct (`false` pour 587, `true` pour 465)
@@ -194,9 +209,84 @@ Vous devriez voir :
 - ⚠️ Sur Railway, les variables sont sécurisées et chiffrées
 - ⚠️ Ne partagez jamais vos identifiants SMTP
 
+## Alternatives à Gmail (Recommandé)
+
+Si Gmail continue de poser problème, voici des alternatives plus fiables :
+
+### SendGrid (Gratuit jusqu'à 100 emails/jour)
+
+1. **Créer un compte** : [https://sendgrid.com](https://sendgrid.com)
+2. **Créer une API Key** :
+   - Settings → API Keys → Create API Key
+   - Donnez-lui un nom (ex: "PrestigeDrive")
+   - Permissions : "Full Access" ou "Mail Send"
+   - Copiez la clé API (vous ne pourrez plus la voir après)
+
+3. **Configuration** :
+```env
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=apikey
+SMTP_PASS=votre-api-key-sendgrid
+SMTP_FROM=votre-email@votre-domaine.fr
+ADMIN_EMAIL=votre-email@votre-domaine.fr
+```
+
+**Avantages** :
+- ✅ Plus fiable que Gmail
+- ✅ Gratuit jusqu'à 100 emails/jour
+- ✅ Pas besoin de validation en 2 étapes
+- ✅ Statistiques d'envoi
+- ✅ Meilleure délivrabilité
+
+### Mailgun (Gratuit jusqu'à 5000 emails/mois)
+
+1. **Créer un compte** : [https://www.mailgun.com](https://www.mailgun.com)
+2. **Récupérer les identifiants SMTP** :
+   - Dashboard → Sending → SMTP credentials
+   - Copiez le mot de passe SMTP
+
+3. **Configuration** :
+```env
+SMTP_HOST=smtp.mailgun.org
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=postmaster@votre-domaine.mailgun.org
+SMTP_PASS=votre-mot-de-passe-mailgun
+SMTP_FROM=votre-email@votre-domaine.fr
+ADMIN_EMAIL=votre-email@votre-domaine.fr
+```
+
+**Avantages** :
+- ✅ Très fiable
+- ✅ Gratuit jusqu'à 5000 emails/mois
+- ✅ Excellente délivrabilité
+- ✅ API et webhooks
+
+### Resend (Gratuit jusqu'à 3000 emails/mois)
+
+1. **Créer un compte** : [https://resend.com](https://resend.com)
+2. **Créer une API Key** :
+   - API Keys → Create API Key
+   - Copiez la clé
+
+3. **Configuration** :
+```env
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=resend
+SMTP_PASS=votre-api-key-resend
+SMTP_FROM=votre-email@votre-domaine.fr
+ADMIN_EMAIL=votre-email@votre-domaine.fr
+```
+
 ## Support
 
 Si vous rencontrez des problèmes, vérifiez :
 1. Les logs du serveur pour les erreurs détaillées
 2. La configuration de votre fournisseur email
 3. Les paramètres de sécurité de votre compte email
+4. Utilisez `npm run diagnostic-email` pour un diagnostic complet
+5. Envisagez d'utiliser SendGrid ou Mailgun si Gmail pose problème

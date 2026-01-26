@@ -10,7 +10,8 @@
     "recover": "node scripts/recover-from-localstorage.js",
     "check-data": "node scripts/check-data.js",
     "test-api": "node scripts/test-api.js",
-    "test-email": "node scripts/test-email.js"
+    "test-email": "node scripts/test-email.js",
+    "diagnostic-email": "node scripts/diagnostic-email.js"
   },
   "keywords": [
     "vtc",
