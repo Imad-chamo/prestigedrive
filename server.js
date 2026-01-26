@@ -696,8 +696,8 @@ connectDB().then(async () => {
         });
     }
 
-    app.listen(PORT, () => {
-        console.log(`🚗 Serveur VTC démarré sur http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚗 Serveur VTC démarré sur http://0.0.0.0:${PORT}`);
         console.log(`📋 Interface chauffeur: http://localhost:${PORT}/chauffeur.html`);
         console.log(`🌐 Site principal: http://localhost:${PORT}/index.html`);
         console.log(`🔒 Rate limiting: ${RATE_LIMIT_MAX} requêtes/${RATE_LIMIT_WINDOW / 1000}s par IP`);
@@ -712,4 +712,3 @@ connectDB().then(async () => {
     console.error('❌ Impossible de démarrer le serveur:', error);
     process.exit(1);
 });
-// Force redeploy
