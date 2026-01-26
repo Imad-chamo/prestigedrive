@@ -1932,18 +1932,38 @@ form .form-row .form-group,
     #devisForm .form-row {
         grid-template-columns: 1fr !important;
         gap: 1.25rem !important;
+        align-items: stretch !important;
     }
     
     /* Correction du décalage des champs date et heure sur mobile */
-    .form-group input[type="date"],
-    .form-group input[type="time"] {
+    #pickupDate,
+    #pickupTime {
         width: 100% !important;
         box-sizing: border-box !important;
         padding: 14px 18px !important;
         font-size: 1rem !important;
         line-height: 1.5 !important;
-        vertical-align: middle !important;
         display: block !important;
+        margin: 0 !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: textfield !important;
+        appearance: none !important;
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        background: #ffffff !important;
+        color: #1e293b !important;
+    }
+    
+    /* Force l'alignement des form-groups contenant date/time */
+    #devisForm .form-row .form-group {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
     }
     
     .form-group label[for="pickupDate"],
@@ -1951,6 +1971,12 @@ form .form-row .form-group,
         margin-bottom: 0.75rem !important;
         display: flex !important;
         align-items: center !important;
+        width: 100% !important;
+    }
+    
+    /* Assure que les deux form-groups dans le même form-row ont la même hauteur */
+    #devisForm .form-row {
+        align-items: flex-start !important;
     }
 }
 
