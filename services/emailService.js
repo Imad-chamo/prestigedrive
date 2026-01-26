@@ -48,7 +48,6 @@ async function verifyConnection() {
     } catch (error) {
         console.error('❌ Erreur de vérification SMTP:', error);
         return false;
-}
     }
 }
 
