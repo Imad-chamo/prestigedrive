@@ -5358,7 +5358,8 @@ form .form-row .form-group,
     
     .service-card-premium {
         margin: 0 auto;
-        max-width: 100%;
+        max-width: 85% !important;
+        width: 100% !important;
         border-radius: 10px !important;
         border-width: 1px !important;
     }
