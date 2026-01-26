@@ -712,3 +712,4 @@ connectDB().then(async () => {
     console.error('❌ Impossible de démarrer le serveur:', error);
     process.exit(1);
 });
+// Force redeploy
