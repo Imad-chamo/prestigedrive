@@ -9,7 +9,8 @@
     "migrate": "node scripts/migrate-to-mongodb.js",
     "recover": "node scripts/recover-from-localstorage.js",
     "check-data": "node scripts/check-data.js",
-    "test-api": "node scripts/test-api.js"
+    "test-api": "node scripts/test-api.js",
+    "test-email": "node scripts/test-email.js"
   },
   "keywords": [
     "vtc",

@@ -101,10 +101,27 @@ Toute la documentation est disponible dans le dossier `docs/` :
 Créez un fichier `.env` à la racine avec :
 
 ```env
+# MongoDB
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/prestigedrive
+
+# Serveur
 PORT=3000
 NODE_ENV=development
+
+# JWT (pour l'authentification admin)
+JWT_SECRET=votre-secret-jwt-tres-securise
+
+# SMTP (Email) - ⚠️ OBLIGATOIRE pour que les emails fonctionnent
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=votre-email@gmail.com
+SMTP_PASS=votre-mot-de-passe-application
+SMTP_FROM=votre-email@gmail.com
+ADMIN_EMAIL=votre-email@gmail.com
 ```
+
+**📧 Configuration Email** : Voir [CONFIGURATION_EMAIL.md](CONFIGURATION_EMAIL.md) pour un guide complet.
 
 ### MongoDB Atlas
 
@@ -189,6 +206,7 @@ Assurez-vous de définir :
 - `MONGODB_URI` : Votre connexion MongoDB
 - `NODE_ENV=production`
 - `PORT` : Port du serveur (généralement 3000)
+- **Variables SMTP** : Voir [CONFIGURATION_EMAIL.md](CONFIGURATION_EMAIL.md) pour configurer l'envoi d'emails
 
 ## 📝 Scripts Disponibles
 
@@ -196,6 +214,7 @@ Assurez-vous de définir :
 npm start          # Démarrer en production
 npm run dev        # Démarrer en développement (nodemon)
 npm run migrate    # Migrer les données JSON vers MongoDB
+npm run test-email # Tester la configuration email
 ```
 
 ## 🐛 Dépannage
@@ -208,6 +227,11 @@ npm run migrate    # Migrer les données JSON vers MongoDB
 ### Port déjà utilisé
 - Changez le `PORT` dans `.env`
 - Ou arrêtez le processus utilisant le port
+
+### Emails ne fonctionnent pas
+- Vérifiez que les variables SMTP sont configurées (voir [CONFIGURATION_EMAIL.md](CONFIGURATION_EMAIL.md))
+- Testez la configuration avec `npm run test-email`
+- Vérifiez les logs du serveur pour les erreurs détaillées
 
 ## 📄 Licence
 
