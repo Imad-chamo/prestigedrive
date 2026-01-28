@@ -761,10 +761,9 @@ connectDB().then(async () => {
     // Initialiser le service email
     const emailInitialized = emailService.initEmailService();
     if (emailInitialized) {
-        // Vérifier la connexion SMTP (optionnel, ne bloque pas le démarrage)
-        emailService.verifyConnection().catch(error => {
-            console.warn('⚠️  Vérification SMTP échouée (le service fonctionnera quand même):', error.message);
-        });
+        // Ne pas vérifier la connexion SMTP au démarrage (peut causer des timeouts sur Railway)
+        // La vérification sera faite lors du premier envoi d'email
+        console.log('📧 Vérification SMTP différée (sera testée lors du premier envoi)');
     }
 
     app.listen(PORT, '0.0.0.0', () => {

@@ -31,10 +31,14 @@ function initEmailService() {
             tls: {
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
             },
-            // Options pour Railway
-            connectionTimeout: 30000, // 30 secondes
-            greetingTimeout: 30000,
-            socketTimeout: 30000
+            // Options optimisées pour Railway et Brevo
+            connectionTimeout: 60000, // 60 secondes (augmenté pour Railway)
+            greetingTimeout: 60000,
+            socketTimeout: 60000,
+            // Pooling pour améliorer la stabilité
+            pool: true,
+            maxConnections: 1,
+            maxMessages: 3
         };
 
         console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
@@ -348,6 +352,10 @@ async function sendClientConfirmation(demande) {
     try {
         const template = getClientConfirmationTemplate(demande);
         
+        console.log('📧 Tentative d\'envoi email client vers:', demande.email);
+        console.log('   SMTP Host:', process.env.SMTP_HOST);
+        console.log('   SMTP Port:', process.env.SMTP_PORT || '587');
+        
         const info = await transporter.sendMail({
             from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: demande.email,
@@ -358,12 +366,15 @@ async function sendClientConfirmation(demande) {
 
         console.log('✅ Email de confirmation envoyé au client:', info.messageId);
         console.log('   📬 Destinataire:', demande.email);
+        console.log('   Response:', info.response || 'N/A');
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de l\'email au client:', error.message);
-        console.error('   Code:', error.code);
+        console.error('   Code:', error.code || 'N/A');
+        console.error('   Command:', error.command || 'N/A');
         console.error('   Destinataire:', demande.email);
-        return { success: false, error: error.message };
+        console.error('   Stack:', error.stack);
+        return { success: false, error: error.message, code: error.code };
     }
 }
 
@@ -384,6 +395,10 @@ async function sendAdminNotification(demande) {
     try {
         const template = getAdminNotificationTemplate(demande);
         
+        console.log('📧 Tentative d\'envoi email admin vers:', adminEmail);
+        console.log('   SMTP Host:', process.env.SMTP_HOST);
+        console.log('   SMTP Port:', process.env.SMTP_PORT || '587');
+        
         const info = await transporter.sendMail({
             from: `"PrestigeDrive - Système" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: adminEmail,
@@ -394,12 +409,15 @@ async function sendAdminNotification(demande) {
 
         console.log('✅ Notification admin envoyée:', info.messageId);
         console.log('   📬 Destinataire:', adminEmail);
+        console.log('   Response:', info.response || 'N/A');
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de la notification admin:', error.message);
-        console.error('   Code:', error.code);
+        console.error('   Code:', error.code || 'N/A');
+        console.error('   Command:', error.command || 'N/A');
         console.error('   Destinataire:', adminEmail);
-        return { success: false, error: error.message };
+        console.error('   Stack:', error.stack);
+        return { success: false, error: error.message, code: error.code };
     }
 }
 
