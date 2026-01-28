@@ -282,6 +282,16 @@ SMTP_FROM=votre-email@votre-domaine.fr
 ADMIN_EMAIL=votre-email@votre-domaine.fr
 ```
 
+## 🚀 Alternatives Simples (Si Gmail ne fonctionne pas)
+
+**Consultez [ALTERNATIVES_EMAIL.md](ALTERNATIVES_EMAIL.md) pour des solutions GRATUITES et FACILES** :
+
+- ✅ **SendGrid** : 100 emails/jour gratuits - Configuration en 5 minutes
+- ✅ **Brevo** : 300 emails/jour gratuits - Très simple
+- ✅ **Mailgun** : 5000 emails/mois gratuits
+
+**Recommandation** : Utilisez **SendGrid** - c'est le plus simple et le plus fiable !
+
 ## Support
 
 Si vous rencontrez des problèmes, vérifiez :
@@ -289,4 +299,4 @@ Si vous rencontrez des problèmes, vérifiez :
 2. La configuration de votre fournisseur email
 3. Les paramètres de sécurité de votre compte email
 4. Utilisez `npm run diagnostic-email` pour un diagnostic complet
-5. Envisagez d'utiliser SendGrid ou Mailgun si Gmail pose problème
+5. **Consultez [ALTERNATIVES_EMAIL.md](ALTERNATIVES_EMAIL.md) pour des alternatives simples et gratuites**
