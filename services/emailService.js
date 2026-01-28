@@ -1,169 +1,127 @@
-const nodemailer = require('nodemailer');
-let Resend = null;
-try {
-    const resendModule = require('resend');
-    // Resend v3 utilise une exportation par défaut qui est une fonction
-    // Essayer différentes façons d'importer
-    if (resendModule.default) {
-        Resend = resendModule.default;
-    } else if (resendModule.Resend) {
-        Resend = resendModule.Resend;
-    } else if (typeof resendModule === 'function') {
-        Resend = resendModule;
-    } else {
-        Resend = resendModule;
-    }
-    console.log('📦 Package resend chargé, type:', typeof Resend);
-} catch (e) {
-    // Resend pas installé, on utilisera SMTP
-    console.warn('⚠️  Package resend non disponible, utilisation de SMTP uniquement');
-}
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
-// Configuration du transporteur email
-let transporter = null;
-let resendClient = null;
-let useResendAPI = false;
+// Client Brevo API
+let brevoClient = null;
+let brevoApiKey = null;
 
-// Initialiser le transporteur
+// Initialiser le service email avec Brevo API
 async function initEmailService() {
-    // Vérifier si on utilise Resend API (si SMTP_HOST est smtp.resend.com et Resend est installé)
-    if (process.env.SMTP_HOST === 'smtp.resend.com' && Resend && process.env.SMTP_PASS) {
-        try {
-            console.log('📧 Détection de Resend - Utilisation de l\'API Resend au lieu de SMTP');
-            console.log('📧 Clé API Resend détectée');
-            console.log('📧 Type de Resend:', typeof Resend);
-            console.log('📧 Resend:', Resend ? Object.keys(Resend).join(', ') : 'NULL');
-            
-            // Resend v3 utilise une fonction, pas un constructeur
-            // La fonction Resend prend la clé API en paramètre
-            if (typeof Resend === 'function') {
-                // Appeler directement la fonction (pas de new)
-                resendClient = Resend(process.env.SMTP_PASS);
-            } else if (Resend && typeof Resend.Resend === 'function') {
-                // Si c'est un objet avec une propriété Resend
-                resendClient = Resend.Resend(process.env.SMTP_PASS);
-            } else if (Resend && Resend.default && typeof Resend.default === 'function') {
-                // Si c'est un objet avec une propriété default
-                resendClient = Resend.default(process.env.SMTP_PASS);
-            } else {
-                // Dernier recours : essayer comme fonction (pas de new)
-                try {
-                    resendClient = Resend(process.env.SMTP_PASS);
-                } catch (e) {
-                    throw new Error(`Impossible d'initialiser Resend. Type: ${typeof Resend}, Erreur: ${e.message}`);
-                }
-            }
-            
-            if (!resendClient) {
-                throw new Error('Resend client est null après initialisation');
-            }
-            
-            useResendAPI = true;
-            
-            console.log('✅ Service email Resend initialisé avec succès (API)');
-            console.log('✅ Resend client créé:', resendClient ? 'OK' : 'NULL');
-            return true;
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'initialisation de Resend API:', error);
-            console.warn('⚠️  Fallback vers SMTP...');
-            // Continue avec SMTP
-        }
-    }
-
-    // Vérifier si les variables d'environnement sont configurées
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    // Vérifier si la clé API Brevo est configurée
+    brevoApiKey = process.env.BREVO_API_KEY;
+    
+    if (!brevoApiKey) {
+        console.warn('='.repeat(60));
+        console.warn('⚠️  BREVO_API_KEY NON CONFIGURÉE');
+        console.warn('='.repeat(60));
         console.warn('⚠️  Configuration email non trouvée. Les emails ne seront pas envoyés.');
-        console.warn('   Pour activer les emails, configurez dans Railway → Variables :');
-        console.warn('   - SMTP_HOST (ex: smtp-relay.brevo.com ou smtp.sendgrid.net)');
-        console.warn('   - SMTP_PORT (ex: 587)');
-        console.warn('   - SMTP_SECURE (ex: false)');
-        console.warn('   - SMTP_USER (votre email ou "apikey" pour SendGrid)');
-        console.warn('   - SMTP_PASS (mot de passe SMTP ou clé API)');
-        console.warn('   - SMTP_FROM (email expéditeur)');
+        console.warn('💡 Pour activer les emails, configurez dans Render → Variables :');
+        console.warn('   - BREVO_API_KEY (votre clé API Brevo)');
+        console.warn('   - SMTP_FROM (email expéditeur, ex: "PrestigeDrive <a10697001@smtp-brevo.com>")');
         console.warn('   - ADMIN_EMAIL (email pour notifications)');
+        console.warn('='.repeat(60));
         return false;
     }
 
     try {
-        const port = parseInt(process.env.SMTP_PORT || '587');
-        const isSecure = process.env.SMTP_SECURE === 'true' || port === 465;
+        // Initialiser le client Brevo
+        brevoClient = new SibApiV3Sdk.TransactionalEmailsApi();
+        brevoClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
+
+        const fromAddress = process.env.SMTP_FROM || 'PrestigeDrive <a10697001@smtp-brevo.com>';
         
-        const smtpConfig = {
-            host: process.env.SMTP_HOST,
-            port: port,
-            secure: isSecure, // true pour port 465, false pour port 587
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            },
-            tls: {
-                rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
-                // Ne pas spécifier de cipher pour permettre la négociation automatique
-                // SSLv3 est obsolète et peut causer des problèmes avec Brevo
-                minVersion: 'TLSv1.2'
-            },
-            // Options optimisées pour Railway et Brevo
-            connectionTimeout: 90000, // 90 secondes (augmenté pour Railway)
-            greetingTimeout: 90000,
-            socketTimeout: 90000,
-            // Désactiver le pooling pour éviter les problèmes de connexion persistante
-            pool: false,
-            // Options de debug (activé pour Railway pour voir les détails)
-            debug: true,
-            logger: true
-        };
-
-        console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
-        console.log(`📧 User: ${smtpConfig.auth.user}`);
-
-        transporter = nodemailer.createTransport(smtpConfig);
-
-        // Test de vérification SMTP
-        console.log('🧪 Test de vérification SMTP...');
-        try {
-            await transporter.verify();
-            console.log('✅ SMTP Brevo OK - Connexion vérifiée avec succès');
-            console.log('✅ Service email initialisé avec succès');
-            return true;
-        } catch (verifyError) {
-            console.error('='.repeat(60));
-            console.error('❌ ERREUR DE VÉRIFICATION SMTP');
-            console.error('='.repeat(60));
-            console.error('❌ La connexion SMTP a échoué lors de la vérification');
-            console.error(`📋 Message: ${verifyError.message}`);
-            console.error(`📋 Code: ${verifyError.code || 'N/A'}`);
-            console.error(`📋 Command: ${verifyError.command || 'N/A'}`);
-            console.error('='.repeat(60));
-            console.error('💡 Vérifiez vos variables d\'environnement :');
-            console.error('   - SMTP_HOST doit être: smtp-relay.brevo.com');
-            console.error('   - SMTP_PORT doit être: 587 (ou 465)');
-            console.error('   - SMTP_USER doit être votre email Brevo complet');
-            console.error('   - SMTP_PASS doit être votre mot de passe SMTP Brevo');
-            console.error('='.repeat(60));
-            // Ne pas retourner false ici - on laisse le transporter créé pour essayer quand même
-            console.warn('⚠️  Service email créé mais vérification échouée - les emails peuvent ne pas fonctionner');
-            return true; // On retourne true pour ne pas bloquer le démarrage
-        }
+        console.log('='.repeat(60));
+        console.log('📧 CONFIGURATION BREVO API');
+        console.log('='.repeat(60));
+        console.log('📋 Service: Brevo Transactional Emails API');
+        console.log(`🔑 API Key: ${brevoApiKey.substring(0, 10)}...${brevoApiKey.substring(brevoApiKey.length - 5)}`);
+        console.log(`📤 From: ${fromAddress}`);
+        console.log(`📧 Admin: ${process.env.ADMIN_EMAIL || 'Non configuré'}`);
+        console.log('='.repeat(60));
+        console.log('✅ Service email Brevo API initialisé avec succès');
+        console.log('📧 Prêt à envoyer des emails via API Brevo');
+        console.log('='.repeat(60));
+        
+        return true;
     } catch (error) {
-        console.error('❌ Erreur lors de l\'initialisation du service email:', error);
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR LORS DE L\'INITIALISATION BREVO API');
+        console.error('='.repeat(60));
+        console.error(`❌ Message: ${error.message}`);
+        console.error(`📚 Stack: ${error.stack}`);
+        console.error('='.repeat(60));
         return false;
     }
 }
 
-// Vérifier la connexion SMTP
+// Vérifier la connexion Brevo API
 async function verifyConnection() {
-    if (!transporter) {
+    if (!brevoClient) {
         return false;
     }
     
     try {
-        await transporter.verify();
-        console.log('✅ Connexion SMTP vérifiée avec succès');
+        // Test simple : vérifier que le client est initialisé
+        console.log('✅ Client Brevo API vérifié');
         return true;
     } catch (error) {
-        console.error('❌ Erreur de vérification SMTP:', error.message);
-        // Ne pas relancer l'erreur pour éviter de planter le serveur
+        console.error('❌ Erreur de vérification Brevo API:', error.message);
         return false;
+    }
+}
+
+// Fonction générique pour envoyer un email via Brevo API
+async function sendEmail(to, subject, htmlContent, textContent, fromName = 'PrestigeDrive') {
+    const startTime = Date.now();
+    
+    if (!brevoClient) {
+        throw new Error('Service email Brevo non initialisé');
+    }
+
+    const fromAddress = process.env.SMTP_FROM || 'PrestigeDrive <a10697001@smtp-brevo.com>';
+    
+    // Extraire l'email FROM (format: "Name <email@domain.com>" ou "email@domain.com")
+    let fromEmail = fromAddress;
+    if (fromAddress.includes('<') && fromAddress.includes('>')) {
+        fromEmail = fromAddress.match(/<([^>]+)>/)[1];
+    }
+    
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.textContent = textContent;
+    sendSmtpEmail.sender = { name: fromName, email: fromEmail };
+    sendSmtpEmail.to = [{ email: to }];
+
+    try {
+        const result = await brevoClient.sendTransacEmail(sendSmtpEmail);
+        const duration = Date.now() - startTime;
+        
+        console.log('='.repeat(60));
+        console.log('✅ EMAIL ENVOYÉ AVEC SUCCÈS (Brevo API)');
+        console.log('='.repeat(60));
+        console.log(`✅ Message ID: ${result.messageId || 'N/A'}`);
+        console.log(`📬 Destinataire: ${to}`);
+        console.log(`📋 Sujet: ${subject}`);
+        console.log(`⏱️  Durée: ${duration}ms`);
+        console.log('='.repeat(60));
+        
+        return { success: true, messageId: result.messageId || result.response?.headers?.['x-message-id'] };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR ENVOI EMAIL (Brevo API)');
+        console.error('='.repeat(60));
+        console.error(`❌ Message: ${error.message}`);
+        console.error(`📋 Code: ${error.code || 'N/A'}`);
+        console.error(`📬 Destinataire: ${to}`);
+        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        if (error.response) {
+            console.error(`📋 Response Status: ${error.response.status || 'N/A'}`);
+            console.error(`📋 Response Body: ${JSON.stringify(error.response.body || {})}`);
+        }
+        console.error(`📚 Stack: ${error.stack}`);
+        console.error('='.repeat(60));
+        throw error;
     }
 }
 
@@ -442,12 +400,12 @@ Voir dans l'interface admin : ${adminUrl}
 async function sendClientConfirmation(demande) {
     const startTime = Date.now();
     
-    if (!transporter) {
+    if (!brevoClient) {
         console.error('='.repeat(60));
         console.error('❌ SERVICE EMAIL NON INITIALISÉ');
         console.error('='.repeat(60));
-        console.error('⚠️  Service email non initialisé. Email non envoyé.');
-        console.error('💡 Vérifiez vos variables SMTP_* dans Railway');
+        console.error('⚠️  Service email Brevo non initialisé. Email non envoyé.');
+        console.error('💡 Vérifiez BREVO_API_KEY dans Render → Variables');
         console.error('='.repeat(60));
         return { success: false, error: 'Service email non configuré' };
     }
@@ -460,43 +418,21 @@ async function sendClientConfirmation(demande) {
         console.log('='.repeat(60));
         console.log(`📬 Destinataire: ${demande.email}`);
         console.log(`📋 Sujet: ${template.subject}`);
-        console.log(`🌐 SMTP Host: ${process.env.SMTP_HOST}`);
-        console.log(`🔌 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
-        console.log(`👤 SMTP User: ${process.env.SMTP_USER}`);
-        console.log(`📤 From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
         console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-        
-        const info = await transporter.sendMail({
-            from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-            to: demande.email,
-            subject: template.subject,
-            html: template.html,
-            text: template.text
-        });
-
-        const duration = Date.now() - startTime;
-        console.log('='.repeat(60));
-        console.log('✅ EMAIL CLIENT ENVOYÉ AVEC SUCCÈS');
-        console.log('='.repeat(60));
-        console.log(`✅ Message ID: ${info.messageId}`);
-        console.log(`📬 Destinataire: ${demande.email}`);
-        console.log(`📧 Response: ${info.response || 'N/A'}`);
-        console.log(`⏱️  Durée: ${duration}ms`);
         console.log('='.repeat(60));
         
-        return { success: true, messageId: info.messageId };
+        const result = await sendEmail(
+            demande.email,
+            template.subject,
+            template.html,
+            template.text,
+            'PrestigeDrive'
+        );
+        
+        return { success: true, messageId: result.messageId };
     } catch (error) {
         const duration = Date.now() - startTime;
-        console.error('='.repeat(60));
-        console.error('❌ ERREUR ENVOI EMAIL CLIENT');
-        console.error('='.repeat(60));
-        console.error(`❌ Message: ${error.message}`);
-        console.error(`📋 Code: ${error.code || 'N/A'}`);
-        console.error(`🔧 Command: ${error.command || 'N/A'}`);
-        console.error(`📬 Destinataire: ${demande.email}`);
         console.error(`⏱️  Durée avant erreur: ${duration}ms`);
-        console.error(`📚 Stack: ${error.stack}`);
-        console.error('='.repeat(60));
         return { success: false, error: error.message, code: error.code };
     }
 }
@@ -505,74 +441,24 @@ async function sendClientConfirmation(demande) {
 async function sendAdminNotification(demande) {
     const startTime = Date.now();
     
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+    const adminEmail = process.env.ADMIN_EMAIL;
     
     if (!adminEmail) {
         console.error('='.repeat(60));
         console.error('❌ ADMIN_EMAIL NON CONFIGURÉ');
         console.error('='.repeat(60));
         console.error('⚠️  ADMIN_EMAIL non configuré. Notification admin non envoyée.');
-        console.error('💡 Configurez ADMIN_EMAIL dans Railway → Variables');
+        console.error('💡 Configurez ADMIN_EMAIL dans Render → Variables');
         console.error('='.repeat(60));
         return { success: false, error: 'ADMIN_EMAIL non configuré' };
     }
-
-    // Utiliser Resend API si configuré
-    if (useResendAPI && resendClient) {
-        try {
-            const template = getAdminNotificationTemplate(demande);
-            
-            console.log('='.repeat(60));
-            console.log('📧 ENVOI EMAIL ADMIN (Resend API)');
-            console.log('='.repeat(60));
-            console.log(`📬 Destinataire: ${adminEmail}`);
-            console.log(`📋 Sujet: ${template.subject}`);
-            console.log(`📤 From: ${process.env.SMTP_FROM || 'noreply@prestigedrive.fr'}`);
-            console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-            
-            const { data, error } = await resendClient.emails.send({
-                from: `PrestigeDrive - Système <${process.env.SMTP_FROM || 'noreply@prestigedrive.fr'}>`,
-                to: adminEmail,
-                subject: template.subject,
-                html: template.html,
-                text: template.text
-            });
-            
-            if (error) {
-                throw error;
-            }
-            
-            const duration = Date.now() - startTime;
-            console.log('='.repeat(60));
-            console.log('✅ EMAIL ADMIN ENVOYÉ AVEC SUCCÈS (Resend API)');
-            console.log('='.repeat(60));
-            console.log(`✅ Message ID: ${data?.id || 'N/A'}`);
-            console.log(`📬 Destinataire: ${adminEmail}`);
-            console.log(`⏱️  Durée: ${duration}ms`);
-            console.log('='.repeat(60));
-            
-            return { success: true, messageId: data?.id };
-        } catch (error) {
-            const duration = Date.now() - startTime;
-            console.error('='.repeat(60));
-            console.error('❌ ERREUR ENVOI EMAIL ADMIN (Resend API)');
-            console.error('='.repeat(60));
-            console.error(`❌ Message: ${error.message}`);
-            console.error(`📋 Code: ${error.name || 'N/A'}`);
-            console.error(`📬 Destinataire: ${adminEmail}`);
-            console.error(`⏱️  Durée avant erreur: ${duration}ms`);
-            console.error(`📚 Stack: ${error.stack}`);
-            console.error('='.repeat(60));
-            return { success: false, error: error.message };
-        }
-    }
     
-    if (!transporter) {
+    if (!brevoClient) {
         console.error('='.repeat(60));
         console.error('❌ SERVICE EMAIL NON INITIALISÉ');
         console.error('='.repeat(60));
-        console.error('⚠️  Service email non initialisé. Email non envoyé.');
-        console.error('💡 Vérifiez vos variables SMTP_* dans Railway');
+        console.error('⚠️  Service email Brevo non initialisé. Email non envoyé.');
+        console.error('💡 Vérifiez BREVO_API_KEY dans Render → Variables');
         console.error('='.repeat(60));
         return { success: false, error: 'Service email non configuré' };
     }
@@ -585,52 +471,21 @@ async function sendAdminNotification(demande) {
         console.log('='.repeat(60));
         console.log(`📬 Destinataire: ${adminEmail}`);
         console.log(`📋 Sujet: ${template.subject}`);
-        console.log(`🌐 SMTP Host: ${process.env.SMTP_HOST}`);
-        console.log(`🔌 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
-        console.log(`👤 SMTP User: ${process.env.SMTP_USER}`);
-        console.log(`📤 From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
         console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-        
-        const mailOptions = {
-            from: `"PrestigeDrive - Système" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-            to: adminEmail,
-            subject: template.subject,
-            html: template.html,
-            text: template.text
-        };
-        
-        console.log('📤 Options d\'envoi:');
-        console.log(`   From: ${mailOptions.from}`);
-        console.log(`   To: ${mailOptions.to}`);
-        console.log(`   Subject: ${mailOptions.subject}`);
-        console.log(`   HTML length: ${mailOptions.html.length} caractères`);
-        console.log(`   Text length: ${mailOptions.text.length} caractères`);
-        
-        const info = await transporter.sendMail(mailOptions);
-
-        const duration = Date.now() - startTime;
-        console.log('='.repeat(60));
-        console.log('✅ EMAIL ADMIN ENVOYÉ AVEC SUCCÈS');
-        console.log('='.repeat(60));
-        console.log(`✅ Message ID: ${info.messageId}`);
-        console.log(`📬 Destinataire: ${adminEmail}`);
-        console.log(`📧 Response: ${info.response || 'N/A'}`);
-        console.log(`⏱️  Durée: ${duration}ms`);
         console.log('='.repeat(60));
         
-        return { success: true, messageId: info.messageId };
+        const result = await sendEmail(
+            adminEmail,
+            template.subject,
+            template.html,
+            template.text,
+            'PrestigeDrive - Système'
+        );
+        
+        return { success: true, messageId: result.messageId };
     } catch (error) {
         const duration = Date.now() - startTime;
-        console.error('='.repeat(60));
-        console.error('❌ ERREUR ENVOI EMAIL ADMIN');
-        console.error('='.repeat(60));
-        console.error(`❌ Message: ${error.message}`);
-        console.error(`📋 Code: ${error.code || 'N/A'}`);
-        console.error(`🔧 Command: ${error.command || 'N/A'}`);
-        console.error(`📬 Destinataire: ${adminEmail}`);
         console.error(`⏱️  Durée avant erreur: ${duration}ms`);
-        console.error(`📚 Stack: ${error.stack}`);
-        console.error('='.repeat(60));
         return { success: false, error: error.message, code: error.code };
     }
 }
@@ -762,27 +617,37 @@ L'équipe PrestigeDrive
 
 // Envoyer l'email de devis au client
 async function sendDevisEmail(demande) {
-    if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email de devis non envoyé.');
+    const startTime = Date.now();
+    
+    if (!brevoClient) {
+        console.warn('⚠️  Service email Brevo non initialisé. Email de devis non envoyé.');
         return { success: false, error: 'Service email non configuré' };
     }
 
     try {
         const template = getDevisTemplate(demande);
         
-        const info = await transporter.sendMail({
-            from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-            to: demande.email,
-            subject: template.subject,
-            html: template.html,
-            text: template.text
-        });
-
-        console.log('✅ Email de devis envoyé au client:', info.messageId);
-        return { success: true, messageId: info.messageId };
+        console.log('='.repeat(60));
+        console.log('📧 ENVOI EMAIL DEVIS');
+        console.log('='.repeat(60));
+        console.log(`📬 Destinataire: ${demande.email}`);
+        console.log(`📋 Sujet: ${template.subject}`);
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+        console.log('='.repeat(60));
+        
+        const result = await sendEmail(
+            demande.email,
+            template.subject,
+            template.html,
+            template.text,
+            'PrestigeDrive'
+        );
+        
+        return { success: true, messageId: result.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de l\'email de devis:', error.message);
-        return { success: false, error: error.message };
+        const duration = Date.now() - startTime;
+        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        return { success: false, error: error.message, code: error.code };
     }
 }
 

@@ -343,7 +343,7 @@ app.get('/api/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development',
         services: {
             mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-            email: (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) ? 'configured' : 'not configured'
+            email: process.env.BREVO_API_KEY ? 'configured' : 'not configured'
         }
     };
     console.log('💚 Health check appelé:', health);
@@ -476,9 +476,8 @@ app.post('/api/demandes', async (req, res) => {
         console.log('📧 ENVOI DES EMAILS');
         console.log('='.repeat(60));
         console.log(`📧 Email client: ${nouvelleDemande.email}`);
-        console.log(`📧 Email admin: ${process.env.ADMIN_EMAIL || process.env.SMTP_USER || 'N/A'}`);
-        console.log(`📧 SMTP Host: ${process.env.SMTP_HOST || 'N/A'}`);
-        console.log(`📧 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
+        console.log(`📧 Email admin: ${process.env.ADMIN_EMAIL || 'N/A'}`);
+        console.log(`📧 Service: Brevo Transactional Emails API`);
 
         // Envoyer les emails AVANT de répondre pour éviter que Render arrête le conteneur
         // Brevo API gère les timeouts automatiquement (plus rapide que SMTP)
@@ -807,9 +806,8 @@ console.log(`📦 Node version: ${process.version}`);
 // Log des variables d'environnement importantes
 console.log('📋 Configuration:');
 console.log(`   - MONGODB_URI: ${process.env.MONGODB_URI ? '✅ Configuré' : '❌ Non configuré'}`);
-console.log(`   - SMTP_HOST: ${process.env.SMTP_HOST || '❌ Non configuré'}`);
-console.log(`   - SMTP_USER: ${process.env.SMTP_USER ? '✅ Configuré' : '❌ Non configuré'}`);
-console.log(`   - SMTP_PASS: ${process.env.SMTP_PASS ? '✅ Configuré' : '❌ Non configuré'}`);
+console.log(`   - BREVO_API_KEY: ${process.env.BREVO_API_KEY ? '✅ Configuré' : '❌ Non configuré'}`);
+console.log(`   - SMTP_FROM: ${process.env.SMTP_FROM || '❌ Non configuré'}`);
 console.log(`   - ADMIN_EMAIL: ${process.env.ADMIN_EMAIL || '❌ Non configuré'}`);
 console.log(`   - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ Configuré' : '❌ Non configuré'}`);
 
