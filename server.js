@@ -481,7 +481,7 @@ app.post('/api/demandes', async (req, res) => {
         console.log(`📧 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
 
         // Envoyer les emails AVANT de répondre pour éviter que Render arrête le conteneur
-        // Nodemailer gère ses propres timeouts (30s configurés dans emailService.js)
+        // Brevo API gère les timeouts automatiquement (plus rapide que SMTP)
         console.log('='.repeat(60));
         console.log('📧 ENVOI DES EMAILS');
         console.log('='.repeat(60));
@@ -836,7 +836,7 @@ app.listen(PORT, '0.0.0.0', () => {
             if (emailInitialized) {
                 console.log('✅ Service email prêt');
             } else {
-                console.warn('⚠️  Service email non initialisé - vérifiez vos variables SMTP_*');
+                console.warn('⚠️  Service email non initialisé - vérifiez BREVO_API_KEY dans Render → Variables');
             }
         } catch (error) {
             console.error('⚠️  Erreur lors de l\'initialisation du service email:', error.message);
