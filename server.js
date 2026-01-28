@@ -18,6 +18,9 @@ const bcrypt = require('bcryptjs');
 const emailService = require('./services/emailService');
 
 const app = express();
+
+// Configuration du port pour Render
+// Render fournit automatiquement PORT via process.env.PORT
 const PORT = process.env.PORT || 3000;
 
 // Rate limiting simple (en mémoire)
@@ -792,16 +795,15 @@ app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Logs de démarrage explicites pour Railway
+// Logs de démarrage
 console.log('='.repeat(60));
 console.log('🚀 DÉMARRAGE DE L\'APPLICATION PRESTIGEDRIVE');
 console.log('='.repeat(60));
 console.log(`📅 Date: ${new Date().toISOString()}`);
 console.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
-console.log(`🔌 Port: ${PORT}`);
 console.log(`📦 Node version: ${process.version}`);
 
-// Log des variables d'environnement importantes (sans les valeurs sensibles)
+// Log des variables d'environnement importantes
 console.log('📋 Configuration:');
 console.log(`   - MONGODB_URI: ${process.env.MONGODB_URI ? '✅ Configuré' : '❌ Non configuré'}`);
 console.log(`   - SMTP_HOST: ${process.env.SMTP_HOST || '❌ Non configuré'}`);
@@ -810,62 +812,56 @@ console.log(`   - SMTP_PASS: ${process.env.SMTP_PASS ? '✅ Configuré' : '❌ N
 console.log(`   - ADMIN_EMAIL: ${process.env.ADMIN_EMAIL || '❌ Non configuré'}`);
 console.log(`   - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ Configuré' : '❌ Non configuré'}`);
 
-// Connexion à MongoDB puis démarrage du serveur
-connectDB().then(async () => {
+// DÉMARRER LE SERVEUR IMMÉDIATEMENT pour que Render détecte le port
+// La connexion MongoDB se fera en arrière-plan
+app.listen(PORT, '0.0.0.0', () => {
     console.log('='.repeat(60));
-    console.log('✅ MongoDB connecté avec succès');
+    console.log('✅ SERVEUR ÉCOUTE SUR LE PORT:', PORT);
+    console.log('='.repeat(60));
+    console.log(`🚗 Serveur Express démarré sur http://0.0.0.0:${PORT}`);
+    console.log(`🌐 Render détectera automatiquement le port: ${PORT}`);
     console.log('='.repeat(60));
     
-    // Initialiser le service email
-    console.log('📧 Initialisation du service email...');
-    try {
-        const emailInitialized = await emailService.initEmailService();
-        if (emailInitialized) {
-            console.log('✅ Service email prêt');
-        } else {
-            console.warn('⚠️  Service email non initialisé - vérifiez vos variables SMTP_*');
+    // Connexion à MongoDB en arrière-plan
+    connectDB().then(async () => {
+        console.log('='.repeat(60));
+        console.log('✅ MongoDB connecté avec succès');
+        console.log('='.repeat(60));
+        
+        // Initialiser le service email
+        console.log('📧 Initialisation du service email...');
+        try {
+            const emailInitialized = await emailService.initEmailService();
+            if (emailInitialized) {
+                console.log('✅ Service email prêt');
+            } else {
+                console.warn('⚠️  Service email non initialisé - vérifiez vos variables SMTP_*');
+            }
+        } catch (error) {
+            console.error('⚠️  Erreur lors de l\'initialisation du service email:', error.message);
+            console.warn('⚠️  Le service continuera mais les emails peuvent ne pas fonctionner');
         }
-    } catch (error) {
-        console.error('⚠️  Erreur lors de l\'initialisation du service email:', error.message);
-        console.warn('⚠️  Le service continuera mais les emails peuvent ne pas fonctionner');
-    }
-
-    app.listen(PORT, '0.0.0.0', () => {
+        
         console.log('='.repeat(60));
-        console.log('✅ SERVEUR DÉMARRÉ AVEC SUCCÈS');
-        console.log('='.repeat(60));
-        console.log(`🚗 Serveur VTC démarré sur http://0.0.0.0:${PORT}`);
+        console.log('🎯 Application complètement initialisée');
         console.log(`📋 Interface chauffeur: http://localhost:${PORT}/chauffeur.html`);
         console.log(`🌐 Site principal: http://localhost:${PORT}/index.html`);
         console.log(`🔒 Rate limiting: ${RATE_LIMIT_MAX} requêtes/${RATE_LIMIT_WINDOW / 1000}s par IP`);
         console.log(`🗄️ Base de données: MongoDB`);
-        if (emailInitialized) {
-            console.log(`📧 Service email: ✅ Activé`);
-            console.log(`   - Host: ${process.env.SMTP_HOST}`);
-            console.log(`   - Port: ${process.env.SMTP_PORT || '587'}`);
-            console.log(`   - From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
-            console.log(`   - Admin: ${process.env.ADMIN_EMAIL || process.env.SMTP_USER}`);
-        } else {
-            console.log(`📧 Service email: ❌ Non configuré (voir .env)`);
-        }
-        console.log('='.repeat(60));
-        console.log('🎯 Le serveur est prêt à recevoir des requêtes');
-        console.log('📝 Les logs apparaîtront ici pour chaque requête');
         console.log('='.repeat(60));
         
-        // Log de heartbeat toutes les 30 secondes pour confirmer que le serveur tourne
+        // Log de heartbeat toutes les 30 secondes
         setInterval(() => {
             console.log(`💓 Heartbeat - Serveur actif - ${new Date().toISOString()}`);
         }, 30000);
+    }).catch((error) => {
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR DE CONNEXION MONGODB');
+        console.error('='.repeat(60));
+        console.error('❌ Impossible de se connecter à MongoDB:', error.message);
+        console.error('⚠️  Le serveur continue mais certaines fonctionnalités peuvent ne pas fonctionner');
+        console.error('💡 Vérifiez votre MONGODB_URI dans les variables d\'environnement');
+        console.error('='.repeat(60));
+        // Ne pas faire process.exit(1) - le serveur doit continuer pour Render
     });
-}).catch((error) => {
-    console.error('='.repeat(60));
-    console.error('❌ ERREUR CRITIQUE AU DÉMARRAGE');
-    console.error('='.repeat(60));
-    console.error('❌ Impossible de démarrer le serveur:', error);
-    console.error('📋 Détails de l\'erreur:');
-    console.error('   - Message:', error.message);
-    console.error('   - Stack:', error.stack);
-    console.error('='.repeat(60));
-    process.exit(1);
 });
