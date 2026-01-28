@@ -8,7 +8,11 @@ Si Gmail ne fonctionne pas, voici **3 alternatives GRATUITES et FACILES** à con
 
 **Gratuit** : 100 emails/jour (3000/mois)
 
-### Étapes (5 minutes) :
+### 📖 Guide Complet
+
+**👉 Consultez [GUIDE_SENDGRID.md](GUIDE_SENDGRID.md) pour un guide étape par étape détaillé !**
+
+### Étapes rapides (5 minutes) :
 
 1. **Créer un compte** : https://sendgrid.com
    - Cliquez sur "Start for free"
@@ -43,6 +47,8 @@ ADMIN_EMAIL=votre-email@gmail.com
 5. **Redéployez** votre service sur Railway
 
 6. **Testez** : `npm run test-email`
+
+**📖 Pour plus de détails, voir [GUIDE_SENDGRID.md](GUIDE_SENDGRID.md)**
 
 ✅ **Avantages** :
 - Configuration en 5 minutes
