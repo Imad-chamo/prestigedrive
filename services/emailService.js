@@ -1,9 +1,22 @@
 const nodemailer = require('nodemailer');
 let Resend = null;
 try {
-    Resend = require('resend');
+    const resendModule = require('resend');
+    // Resend v3 utilise une exportation par défaut qui est une fonction
+    // Essayer différentes façons d'importer
+    if (resendModule.default) {
+        Resend = resendModule.default;
+    } else if (resendModule.Resend) {
+        Resend = resendModule.Resend;
+    } else if (typeof resendModule === 'function') {
+        Resend = resendModule;
+    } else {
+        Resend = resendModule;
+    }
+    console.log('📦 Package resend chargé, type:', typeof Resend);
 } catch (e) {
     // Resend pas installé, on utilisera SMTP
+    console.warn('⚠️  Package resend non disponible, utilisation de SMTP uniquement');
 }
 
 // Configuration du transporteur email
@@ -18,11 +31,37 @@ async function initEmailService() {
         try {
             console.log('📧 Détection de Resend - Utilisation de l\'API Resend au lieu de SMTP');
             console.log('📧 Clé API Resend détectée');
+            console.log('📧 Type de Resend:', typeof Resend);
+            console.log('📧 Resend:', Resend ? Object.keys(Resend).join(', ') : 'NULL');
             
-            resendClient = new Resend(process.env.SMTP_PASS);
+            // Resend v3 utilise une fonction, pas un constructeur
+            // La fonction Resend prend la clé API en paramètre
+            if (typeof Resend === 'function') {
+                // Appeler directement la fonction (pas de new)
+                resendClient = Resend(process.env.SMTP_PASS);
+            } else if (Resend && typeof Resend.Resend === 'function') {
+                // Si c'est un objet avec une propriété Resend
+                resendClient = Resend.Resend(process.env.SMTP_PASS);
+            } else if (Resend && Resend.default && typeof Resend.default === 'function') {
+                // Si c'est un objet avec une propriété default
+                resendClient = Resend.default(process.env.SMTP_PASS);
+            } else {
+                // Dernier recours : essayer comme fonction (pas de new)
+                try {
+                    resendClient = Resend(process.env.SMTP_PASS);
+                } catch (e) {
+                    throw new Error(`Impossible d'initialiser Resend. Type: ${typeof Resend}, Erreur: ${e.message}`);
+                }
+            }
+            
+            if (!resendClient) {
+                throw new Error('Resend client est null après initialisation');
+            }
+            
             useResendAPI = true;
             
             console.log('✅ Service email Resend initialisé avec succès (API)');
+            console.log('✅ Resend client créé:', resendClient ? 'OK' : 'NULL');
             return true;
         } catch (error) {
             console.error('❌ Erreur lors de l\'initialisation de Resend API:', error);
