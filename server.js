@@ -480,25 +480,23 @@ app.post('/api/demandes', async (req, res) => {
         console.log(`📧 SMTP Host: ${process.env.SMTP_HOST || 'N/A'}`);
         console.log(`📧 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
 
-        // Envoyer les emails AVANT de répondre pour éviter que Railway arrête le conteneur
-        // Attendre avec un timeout pour ne pas bloquer trop longtemps
-        console.log('📧 Envoi des emails en cours...');
+        // Envoyer les emails AVANT de répondre pour éviter que Render arrête le conteneur
+        // Nodemailer gère ses propres timeouts (30s configurés dans emailService.js)
+        console.log('='.repeat(60));
+        console.log('📧 ENVOI DES EMAILS');
+        console.log('='.repeat(60));
+        console.log('📧 Démarrage de l\'envoi des emails...');
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+        
         try {
-            const emailPromise = emailService.sendNewDemandeEmails(nouvelleDemande);
-            
-            // Créer un timeout de 30 secondes pour l'envoi d'email
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Timeout: Envoi email trop long')), 30000);
-            });
-            
-            // Attendre l'envoi avec timeout
-            const results = await Promise.race([emailPromise, timeoutPromise]);
+            // Await direct - Nodemailer gère ses propres timeouts
+            const results = await emailService.sendNewDemandeEmails(nouvelleDemande);
             
             const emailTime = Date.now() - startTime;
             console.log('='.repeat(60));
             console.log('📊 RÉSULTATS ENVOI EMAILS');
             console.log('='.repeat(60));
-            console.log(`⏱️  Temps d'envoi: ${emailTime}ms`);
+            console.log(`⏱️  Temps total: ${emailTime}ms`);
             console.log(`📧 Email client: ${results.client.success ? '✅ Succès' : '❌ Échec'}`);
             if (!results.client.success) {
                 console.error(`   ❌ Erreur: ${results.client.error}`);
@@ -515,17 +513,20 @@ app.post('/api/demandes', async (req, res) => {
             }
             console.log('='.repeat(60));
         } catch (error) {
-            // Si timeout ou autre erreur, logger mais continuer
+            // Erreur non attendue (ne devrait pas arriver car sendNewDemandeEmails retourne toujours un objet)
+            const emailTime = Date.now() - startTime;
             console.error('='.repeat(60));
-            console.error('⚠️  ERREUR LORS DE L\'ENVOI DES EMAILS');
+            console.error('⚠️  ERREUR INATTENDUE LORS DE L\'ENVOI DES EMAILS');
             console.error('='.repeat(60));
-            console.error('⚠️  Erreur:', error.message);
-            console.error('📋 Détails:', error);
+            console.error(`❌ Erreur: ${error.message}`);
+            console.error(`📋 Type: ${error.name || 'Unknown'}`);
+            console.error(`⏱️  Temps avant erreur: ${emailTime}ms`);
             if (error.stack) {
-                console.error('📚 Stack:', error.stack);
+                console.error(`📚 Stack: ${error.stack}`);
             }
             console.error('='.repeat(60));
-            console.warn('⚠️  La demande a été créée mais l\'envoi d\'email a échoué');
+            console.warn('⚠️  La demande a été créée mais une erreur inattendue s\'est produite lors de l\'envoi d\'email');
+            console.warn('⚠️  Vérifiez les logs ci-dessus pour les détails des emails individuels');
         }
 
         const totalTime = Date.now() - startTime;
