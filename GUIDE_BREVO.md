@@ -208,10 +208,13 @@ Vous devriez voir :
 - ✅ Redéployez votre service après avoir ajouté les variables
 - ✅ Attendez 1-2 minutes que Railway redéploie
 
-### "SMTP password not found"
+### "SMTP password not found" ou "Invalid login"
 - ✅ Vous devez générer un mot de passe SMTP spécifique dans Brevo
-- ✅ Ce n'est PAS votre mot de passe de connexion Brevo
+- ✅ Ce n'est **PAS** votre mot de passe de connexion Brevo
 - ✅ Allez dans Settings → SMTP & API → SMTP → Generate new password
+- ✅ Le mot de passe SMTP ressemble à : `xsmtpib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+- ✅ C'est une longue chaîne de caractères générée automatiquement
+- ❌ **NE PAS utiliser** le mot de passe avec lequel vous vous connectez à Brevo
 
 ---
 
