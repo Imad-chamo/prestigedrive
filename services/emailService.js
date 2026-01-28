@@ -8,37 +8,30 @@ function initEmailService() {
     // Vérifier si les variables d'environnement sont configurées
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.warn('⚠️  Configuration email non trouvée. Les emails ne seront pas envoyés.');
-        console.warn('   Configurez SMTP_HOST, SMTP_USER, SMTP_PASS dans vos variables d\'environnement');
+        console.warn('   Pour activer les emails, configurez dans Railway → Variables :');
+        console.warn('   - SMTP_HOST (ex: smtp-relay.brevo.com ou smtp.sendgrid.net)');
+        console.warn('   - SMTP_PORT (ex: 587)');
+        console.warn('   - SMTP_SECURE (ex: false)');
+        console.warn('   - SMTP_USER (votre email ou "apikey" pour SendGrid)');
+        console.warn('   - SMTP_PASS (mot de passe SMTP ou clé API)');
+        console.warn('   - SMTP_FROM (email expéditeur)');
+        console.warn('   - ADMIN_EMAIL (email pour notifications)');
         return false;
     }
 
     try {
-        const smtpConfig = {
+        transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true', // true pour 465, false pour autres ports
+            secure: process.env.SMTP_SECURE === 'true',
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
             },
             tls: {
-                // Ne pas rejeter les certificats non autorisés (pour certains serveurs)
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
-            },
-            // Options de timeout augmentées pour Railway
-            connectionTimeout: 20000, // 20 secondes
-            greetingTimeout: 20000,
-            socketTimeout: 20000,
-            // Options supplémentaires pour Railway
-            pool: true,
-            maxConnections: 1,
-            maxMessages: 3
-        };
-
-        console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
-        console.log(`📧 User: ${smtpConfig.auth.user}`);
-
-        transporter = nodemailer.createTransport(smtpConfig);
+            }
+        });
 
         console.log('✅ Service email initialisé avec succès');
         return true;
@@ -391,7 +384,6 @@ async function sendAdminNotification(demande) {
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de la notification admin:', error.message);
-        console.error('   Code:', error.code);
         return { success: false, error: error.message };
     }
 }
@@ -543,7 +535,6 @@ async function sendDevisEmail(demande) {
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de l\'email de devis:', error.message);
-        console.error('   Code:', error.code);
         return { success: false, error: error.message };
     }
 }
