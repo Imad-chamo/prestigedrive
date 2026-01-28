@@ -20,7 +20,7 @@ function initEmailService() {
     }
 
     try {
-        transporter = nodemailer.createTransport({
+        const smtpConfig = {
             host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587'),
             secure: process.env.SMTP_SECURE === 'true',
@@ -30,8 +30,17 @@ function initEmailService() {
             },
             tls: {
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
-            }
-        });
+            },
+            // Options pour Railway
+            connectionTimeout: 30000, // 30 secondes
+            greetingTimeout: 30000,
+            socketTimeout: 30000
+        };
+
+        console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
+        console.log(`📧 User: ${smtpConfig.auth.user}`);
+
+        transporter = nodemailer.createTransport(smtpConfig);
 
         console.log('✅ Service email initialisé avec succès');
         return true;
