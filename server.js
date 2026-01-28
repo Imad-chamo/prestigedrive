@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 // Import de la connexion MongoDB et du modèle
+const mongoose = require('mongoose');
 const connectDB = require('./config/database');
 const Demande = require('./models/Demande');
 const Admin = require('./models/Admin');
@@ -330,12 +331,35 @@ app.get('/api/demandes/:id', protect, async (req, res) => {
     }
 });
 
+// Route de health check pour Railway
+app.get('/api/health', (req, res) => {
+    const health = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        services: {
+            mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+            email: (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) ? 'configured' : 'not configured'
+        }
+    };
+    console.log('💚 Health check appelé:', health);
+    res.json(health);
+});
+
 // Route de test pour vérifier l'envoi d'email depuis le formulaire
 app.post('/api/test-email', async (req, res) => {
     try {
         const { email } = req.body;
         
+        console.log('='.repeat(60));
+        console.log('🧪 TEST D\'ENVOI D\'EMAIL');
+        console.log('='.repeat(60));
+        console.log(`📧 Email de test: ${email}`);
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+        
         if (!email) {
+            console.error('❌ Email requis manquant');
             return res.status(400).json({ success: false, error: 'Email requis' });
         }
 
@@ -356,7 +380,23 @@ app.post('/api/test-email', async (req, res) => {
             status: 'nouvelle'
         };
 
+        console.log('📤 Envoi des emails de test...');
         const results = await emailService.sendNewDemandeEmails(testDemande);
+
+        console.log('='.repeat(60));
+        console.log('📊 RÉSULTATS DU TEST');
+        console.log('='.repeat(60));
+        console.log(`Client: ${results.client.success ? '✅ Succès' : '❌ Échec'}`);
+        if (!results.client.success) {
+            console.error(`   Erreur: ${results.client.error}`);
+            console.error(`   Code: ${results.client.code || 'N/A'}`);
+        }
+        console.log(`Admin: ${results.admin.success ? '✅ Succès' : '❌ Échec'}`);
+        if (!results.admin.success) {
+            console.error(`   Erreur: ${results.admin.error}`);
+            console.error(`   Code: ${results.admin.code || 'N/A'}`);
+        }
+        console.log('='.repeat(60));
 
         res.json({
             success: true,
@@ -367,24 +407,42 @@ app.post('/api/test-email', async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR LORS DU TEST EMAIL');
+        console.error('='.repeat(60));
         console.error('❌ Erreur test email:', error);
+        console.error('   Message:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('='.repeat(60));
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // Créer une nouvelle demande
 app.post('/api/demandes', async (req, res) => {
+    const startTime = Date.now();
     try {
-        console.log('📥 Nouvelle demande reçue:', {
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone
-        });
+        console.log('='.repeat(60));
+        console.log('📥 NOUVELLE DEMANDE REÇUE');
+        console.log('='.repeat(60));
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+        console.log(`👤 Nom: ${req.body.name || 'N/A'}`);
+        console.log(`📧 Email: ${req.body.email || 'N/A'}`);
+        console.log(`📞 Téléphone: ${req.body.phone || 'N/A'}`);
+        console.log(`📍 Pickup: ${req.body.pickup || 'N/A'}`);
+        console.log(`🎯 Dropoff: ${req.body.dropoff || 'N/A'}`);
+        console.log(`📅 Date: ${req.body.date || 'N/A'}`);
+        console.log(`🕐 Heure: ${req.body.time || 'N/A'}`);
+        console.log(`🚗 Service: ${req.body.serviceType || 'N/A'}`);
 
         // Validation
         const validationErrors = validateDemande(req.body);
         if (validationErrors.length > 0) {
-            console.error('❌ Erreurs de validation:', validationErrors);
+            console.error('='.repeat(60));
+            console.error('❌ ERREURS DE VALIDATION');
+            console.error('='.repeat(60));
+            console.error('Erreurs:', validationErrors);
+            console.error('='.repeat(60));
             return res.status(400).json({
                 success: false,
                 error: validationErrors.join(', ')
@@ -406,39 +464,83 @@ app.post('/api/demandes', async (req, res) => {
             status: 'nouvelle'
         };
 
+        console.log('💾 Sauvegarde dans MongoDB...');
         const nouvelleDemande = await Demande.create(demandeData);
         console.log('✅ Demande créée dans MongoDB:', nouvelleDemande._id);
+        console.log(`   ID: ${nouvelleDemande._id}`);
 
-        console.log('📧 Tentative d\'envoi des emails pour la demande:', nouvelleDemande._id);
-        console.log('   Email client:', nouvelleDemande.email);
-        console.log('   Email admin:', process.env.ADMIN_EMAIL || process.env.SMTP_USER);
+        console.log('='.repeat(60));
+        console.log('📧 ENVOI DES EMAILS');
+        console.log('='.repeat(60));
+        console.log(`📧 Email client: ${nouvelleDemande.email}`);
+        console.log(`📧 Email admin: ${process.env.ADMIN_EMAIL || process.env.SMTP_USER || 'N/A'}`);
+        console.log(`📧 SMTP Host: ${process.env.SMTP_HOST || 'N/A'}`);
+        console.log(`📧 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
 
-        // Envoyer les emails (client + admin) de manière asynchrone
-        // Ne pas bloquer la réponse si l'envoi d'email échoue
-        emailService.sendNewDemandeEmails(nouvelleDemande)
-            .then(results => {
-                console.log('📧 Résultats envoi emails:', {
-                    client: results.client.success ? '✅' : '❌',
-                    admin: results.admin.success ? '✅' : '❌'
-                });
-                if (!results.client.success) {
-                    console.error('❌ Erreur email client:', results.client.error);
-                    console.error('   Code:', results.client.error?.code || 'N/A');
-                }
-                if (!results.admin.success) {
-                    console.error('❌ Erreur email admin:', results.admin.error);
-                    console.error('   Code:', results.admin.error?.code || 'N/A');
-                }
-            })
-            .catch(error => {
-                console.error('⚠️  Erreur lors de l\'envoi des emails (non bloquant):', error);
-                console.error('   Détails:', error.message);
-                console.error('   Stack:', error.stack);
+        // Envoyer les emails AVANT de répondre pour éviter que Railway arrête le conteneur
+        // Attendre avec un timeout pour ne pas bloquer trop longtemps
+        console.log('📧 Envoi des emails en cours...');
+        try {
+            const emailPromise = emailService.sendNewDemandeEmails(nouvelleDemande);
+            
+            // Créer un timeout de 30 secondes pour l'envoi d'email
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Timeout: Envoi email trop long')), 30000);
             });
+            
+            // Attendre l'envoi avec timeout
+            const results = await Promise.race([emailPromise, timeoutPromise]);
+            
+            const emailTime = Date.now() - startTime;
+            console.log('='.repeat(60));
+            console.log('📊 RÉSULTATS ENVOI EMAILS');
+            console.log('='.repeat(60));
+            console.log(`⏱️  Temps d'envoi: ${emailTime}ms`);
+            console.log(`📧 Email client: ${results.client.success ? '✅ Succès' : '❌ Échec'}`);
+            if (!results.client.success) {
+                console.error(`   ❌ Erreur: ${results.client.error}`);
+                console.error(`   📋 Code: ${results.client.code || 'N/A'}`);
+            } else {
+                console.log(`   ✅ Message ID: ${results.client.messageId || 'N/A'}`);
+            }
+            console.log(`📧 Email admin: ${results.admin.success ? '✅ Succès' : '❌ Échec'}`);
+            if (!results.admin.success) {
+                console.error(`   ❌ Erreur: ${results.admin.error}`);
+                console.error(`   📋 Code: ${results.admin.code || 'N/A'}`);
+            } else {
+                console.log(`   ✅ Message ID: ${results.admin.messageId || 'N/A'}`);
+            }
+            console.log('='.repeat(60));
+        } catch (error) {
+            // Si timeout ou autre erreur, logger mais continuer
+            console.error('='.repeat(60));
+            console.error('⚠️  ERREUR LORS DE L\'ENVOI DES EMAILS');
+            console.error('='.repeat(60));
+            console.error('⚠️  Erreur:', error.message);
+            console.error('📋 Détails:', error);
+            if (error.stack) {
+                console.error('📚 Stack:', error.stack);
+            }
+            console.error('='.repeat(60));
+            console.warn('⚠️  La demande a été créée mais l\'envoi d\'email a échoué');
+        }
+
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ Demande traitée avec succès en ${totalTime}ms`);
+        console.log('='.repeat(60));
 
         res.status(201).json({ success: true, data: nouvelleDemande });
     } catch (error) {
-        console.error('Erreur création demande:', error);
+        const totalTime = Date.now() - startTime;
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR CRITIQUE LORS DE LA CRÉATION DE LA DEMANDE');
+        console.error('='.repeat(60));
+        console.error('❌ Erreur:', error.message);
+        console.error('📋 Type:', error.name);
+        console.error('📚 Stack:', error.stack);
+        console.error(`⏱️  Temps avant erreur: ${totalTime}ms`);
+        console.error('='.repeat(60));
+        
         if (error.name === 'ValidationError') {
             return res.status(400).json({
                 success: false,
@@ -605,98 +707,8 @@ app.delete('/api/demandes/:id', protect, async (req, res) => {
     }
 });
 
-// Route 404 pour les routes API (AVANT les fichiers statiques)
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ success: false, error: 'Route API non trouvée' });
-});
-
-// Routes Stripe (si configuré)
-if (process.env.STRIPE_SECRET_KEY) {
-    const stripeService = require('./services/stripeService');
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-    // Créer une session de paiement
-    app.post('/api/paiement/create-session', async (req, res) => {
-        try {
-            const { demandeId, amount } = req.body;
-
-            if (!demandeId || !amount) {
-                return res.status(400).json({ success: false, error: 'demandeId et amount requis' });
-            }
-
-            // Récupérer la demande
-            const demande = await Demande.findById(demandeId);
-            if (!demande) {
-                return res.status(404).json({ success: false, error: 'Demande non trouvée' });
-            }
-
-            // Créer la session Stripe
-            const session = await stripeService.createCheckoutSession(demande, parseFloat(amount));
-
-            res.json({
-                success: true,
-                sessionId: session.id,
-                url: session.url
-            });
-        } catch (error) {
-            console.error('Erreur création session paiement:', error);
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
-
-    // Webhook Stripe (pour les événements)
-    app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-        const sig = req.headers['stripe-signature'];
-        let event;
-
-        try {
-            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-        } catch (err) {
-            console.error('Erreur webhook:', err.message);
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
-
-        // Gérer les événements
-        switch (event.type) {
-            case 'checkout.session.completed':
-                const session = event.data.object;
-                // Paiement réussi - créer et envoyer la facture automatiquement
-                try {
-                    if (session.payment_intent) {
-                        const invoice = await stripeService.createInvoice(session.payment_intent);
-                        console.log('✅ Facture créée et envoyée:', invoice.id);
-                    }
-
-                    // Mettre à jour la demande
-                    if (session.metadata && session.metadata.demande_id) {
-                        await Demande.findByIdAndUpdate(session.metadata.demande_id, {
-                            status: 'paye',
-                            datePaiement: new Date(),
-                        });
-                    }
-                } catch (error) {
-                    console.error('Erreur traitement paiement:', error);
-                }
-                break;
-
-            case 'invoice.payment_succeeded':
-                console.log('✅ Facture payée:', event.data.object.id);
-                break;
-        }
-
-        res.json({ received: true });
-    });
-
-    // Récupérer une session
-    app.get('/api/paiement/session/:sessionId', async (req, res) => {
-        try {
-            const session = await stripeService.getSession(req.params.sessionId);
-            res.json({ success: true, data: session });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
-}
+// Note: Les routes Stripe sont déjà définies plus haut (lignes 207-299)
+// Pas besoin de les redéfinir ici
 
 // Route spéciale pour les icônes avec headers anti-cache
 app.get('/icons/*', (req, res, next) => {
@@ -724,6 +736,19 @@ app.get('/gallery/*', (req, res, next) => {
     next();
 });
 
+// Route 404 pour les routes API (APRÈS toutes les routes API définies)
+app.use('/api/*', (req, res) => {
+    console.log(`❌ Route API non trouvée: ${req.method} ${req.originalUrl}`);
+    console.log(`   IP: ${req.ip || req.connection.remoteAddress}`);
+    console.log(`   Headers: ${JSON.stringify(req.headers)}`);
+    res.status(404).json({ 
+        success: false, 
+        error: 'Route API non trouvée',
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
 // Servir les fichiers statiques (APRÈS les routes API)
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -734,7 +759,14 @@ app.get('/', (req, res) => {
 
 // Middleware de gestion d'erreurs global
 app.use((err, req, res, next) => {
-    console.error('Erreur non gérée:', err);
+    console.error('='.repeat(60));
+    console.error('❌ ERREUR NON GÉRÉE');
+    console.error('='.repeat(60));
+    console.error('Erreur:', err);
+    console.error('Path:', req.path);
+    console.error('Method:', req.method);
+    console.error('Stack:', err.stack);
+    console.error('='.repeat(60));
     res.status(500).json({
         success: false,
         error: process.env.NODE_ENV === 'production'
@@ -745,40 +777,95 @@ app.use((err, req, res, next) => {
 
 // Route 404 pour les autres routes (pages HTML uniquement, pas les API)
 app.use((req, res) => {
-    // Si c'est une route API, retourner une erreur JSON
+    // Si c'est une route API, elle devrait déjà avoir été gérée plus haut
+    // Mais au cas où, on vérifie quand même
     if (req.path.startsWith('/api/')) {
+        console.log(`⚠️  Route API non gérée par le middleware précédent: ${req.method} ${req.originalUrl}`);
         return res.status(404).json({
             success: false,
-            error: 'Route API non trouvée'
+            error: 'Route API non trouvée',
+            path: req.originalUrl,
+            method: req.method
         });
     }
     // Sinon, servir index.html pour les routes SPA
     res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Logs de démarrage explicites pour Railway
+console.log('='.repeat(60));
+console.log('🚀 DÉMARRAGE DE L\'APPLICATION PRESTIGEDRIVE');
+console.log('='.repeat(60));
+console.log(`📅 Date: ${new Date().toISOString()}`);
+console.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔌 Port: ${PORT}`);
+console.log(`📦 Node version: ${process.version}`);
+
+// Log des variables d'environnement importantes (sans les valeurs sensibles)
+console.log('📋 Configuration:');
+console.log(`   - MONGODB_URI: ${process.env.MONGODB_URI ? '✅ Configuré' : '❌ Non configuré'}`);
+console.log(`   - SMTP_HOST: ${process.env.SMTP_HOST || '❌ Non configuré'}`);
+console.log(`   - SMTP_USER: ${process.env.SMTP_USER ? '✅ Configuré' : '❌ Non configuré'}`);
+console.log(`   - SMTP_PASS: ${process.env.SMTP_PASS ? '✅ Configuré' : '❌ Non configuré'}`);
+console.log(`   - ADMIN_EMAIL: ${process.env.ADMIN_EMAIL || '❌ Non configuré'}`);
+console.log(`   - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ Configuré' : '❌ Non configuré'}`);
+
 // Connexion à MongoDB puis démarrage du serveur
 connectDB().then(async () => {
+    console.log('='.repeat(60));
+    console.log('✅ MongoDB connecté avec succès');
+    console.log('='.repeat(60));
+    
     // Initialiser le service email
-    const emailInitialized = emailService.initEmailService();
-    if (emailInitialized) {
-        // Ne pas vérifier la connexion SMTP au démarrage (peut causer des timeouts sur Railway)
-        // La vérification sera faite lors du premier envoi d'email
-        console.log('📧 Vérification SMTP différée (sera testée lors du premier envoi)');
+    console.log('📧 Initialisation du service email...');
+    try {
+        const emailInitialized = await emailService.initEmailService();
+        if (emailInitialized) {
+            console.log('✅ Service email prêt');
+        } else {
+            console.warn('⚠️  Service email non initialisé - vérifiez vos variables SMTP_*');
+        }
+    } catch (error) {
+        console.error('⚠️  Erreur lors de l\'initialisation du service email:', error.message);
+        console.warn('⚠️  Le service continuera mais les emails peuvent ne pas fonctionner');
     }
 
     app.listen(PORT, '0.0.0.0', () => {
+        console.log('='.repeat(60));
+        console.log('✅ SERVEUR DÉMARRÉ AVEC SUCCÈS');
+        console.log('='.repeat(60));
         console.log(`🚗 Serveur VTC démarré sur http://0.0.0.0:${PORT}`);
         console.log(`📋 Interface chauffeur: http://localhost:${PORT}/chauffeur.html`);
         console.log(`🌐 Site principal: http://localhost:${PORT}/index.html`);
         console.log(`🔒 Rate limiting: ${RATE_LIMIT_MAX} requêtes/${RATE_LIMIT_WINDOW / 1000}s par IP`);
         console.log(`🗄️ Base de données: MongoDB`);
         if (emailInitialized) {
-            console.log(`📧 Service email: Activé`);
+            console.log(`📧 Service email: ✅ Activé`);
+            console.log(`   - Host: ${process.env.SMTP_HOST}`);
+            console.log(`   - Port: ${process.env.SMTP_PORT || '587'}`);
+            console.log(`   - From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
+            console.log(`   - Admin: ${process.env.ADMIN_EMAIL || process.env.SMTP_USER}`);
         } else {
-            console.log(`📧 Service email: Non configuré (voir .env)`);
+            console.log(`📧 Service email: ❌ Non configuré (voir .env)`);
         }
+        console.log('='.repeat(60));
+        console.log('🎯 Le serveur est prêt à recevoir des requêtes');
+        console.log('📝 Les logs apparaîtront ici pour chaque requête');
+        console.log('='.repeat(60));
+        
+        // Log de heartbeat toutes les 30 secondes pour confirmer que le serveur tourne
+        setInterval(() => {
+            console.log(`💓 Heartbeat - Serveur actif - ${new Date().toISOString()}`);
+        }, 30000);
     });
 }).catch((error) => {
+    console.error('='.repeat(60));
+    console.error('❌ ERREUR CRITIQUE AU DÉMARRAGE');
+    console.error('='.repeat(60));
     console.error('❌ Impossible de démarrer le serveur:', error);
+    console.error('📋 Détails de l\'erreur:');
+    console.error('   - Message:', error.message);
+    console.error('   - Stack:', error.stack);
+    console.error('='.repeat(60));
     process.exit(1);
 });

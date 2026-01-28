@@ -1,10 +1,36 @@
 const nodemailer = require('nodemailer');
+let Resend = null;
+try {
+    Resend = require('resend');
+} catch (e) {
+    // Resend pas installé, on utilisera SMTP
+}
 
 // Configuration du transporteur email
 let transporter = null;
+let resendClient = null;
+let useResendAPI = false;
 
 // Initialiser le transporteur
-function initEmailService() {
+async function initEmailService() {
+    // Vérifier si on utilise Resend API (si SMTP_HOST est smtp.resend.com et Resend est installé)
+    if (process.env.SMTP_HOST === 'smtp.resend.com' && Resend && process.env.SMTP_PASS) {
+        try {
+            console.log('📧 Détection de Resend - Utilisation de l\'API Resend au lieu de SMTP');
+            console.log('📧 Clé API Resend détectée');
+            
+            resendClient = new Resend(process.env.SMTP_PASS);
+            useResendAPI = true;
+            
+            console.log('✅ Service email Resend initialisé avec succès (API)');
+            return true;
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'initialisation de Resend API:', error);
+            console.warn('⚠️  Fallback vers SMTP...');
+            // Continue avec SMTP
+        }
+    }
+
     // Vérifier si les variables d'environnement sont configurées
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.warn('⚠️  Configuration email non trouvée. Les emails ne seront pas envoyés.');
@@ -33,7 +59,9 @@ function initEmailService() {
             },
             tls: {
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
-                ciphers: 'SSLv3'
+                // Ne pas spécifier de cipher pour permettre la négociation automatique
+                // SSLv3 est obsolète et peut causer des problèmes avec Brevo
+                minVersion: 'TLSv1.2'
             },
             // Options optimisées pour Railway et Brevo
             connectionTimeout: 90000, // 90 secondes (augmenté pour Railway)
@@ -41,9 +69,9 @@ function initEmailService() {
             socketTimeout: 90000,
             // Désactiver le pooling pour éviter les problèmes de connexion persistante
             pool: false,
-            // Options de debug (désactivé en production)
-            debug: process.env.NODE_ENV !== 'production',
-            logger: process.env.NODE_ENV !== 'production'
+            // Options de debug (activé pour Railway pour voir les détails)
+            debug: true,
+            logger: true
         };
 
         console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
@@ -51,8 +79,32 @@ function initEmailService() {
 
         transporter = nodemailer.createTransport(smtpConfig);
 
-        console.log('✅ Service email initialisé avec succès');
-        return true;
+        // Test de vérification SMTP
+        console.log('🧪 Test de vérification SMTP...');
+        try {
+            await transporter.verify();
+            console.log('✅ SMTP Brevo OK - Connexion vérifiée avec succès');
+            console.log('✅ Service email initialisé avec succès');
+            return true;
+        } catch (verifyError) {
+            console.error('='.repeat(60));
+            console.error('❌ ERREUR DE VÉRIFICATION SMTP');
+            console.error('='.repeat(60));
+            console.error('❌ La connexion SMTP a échoué lors de la vérification');
+            console.error(`📋 Message: ${verifyError.message}`);
+            console.error(`📋 Code: ${verifyError.code || 'N/A'}`);
+            console.error(`📋 Command: ${verifyError.command || 'N/A'}`);
+            console.error('='.repeat(60));
+            console.error('💡 Vérifiez vos variables d\'environnement :');
+            console.error('   - SMTP_HOST doit être: smtp-relay.brevo.com');
+            console.error('   - SMTP_PORT doit être: 587 (ou 465)');
+            console.error('   - SMTP_USER doit être votre email Brevo complet');
+            console.error('   - SMTP_PASS doit être votre mot de passe SMTP Brevo');
+            console.error('='.repeat(60));
+            // Ne pas retourner false ici - on laisse le transporter créé pour essayer quand même
+            console.warn('⚠️  Service email créé mais vérification échouée - les emails peuvent ne pas fonctionner');
+            return true; // On retourne true pour ne pas bloquer le démarrage
+        }
     } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation du service email:', error);
         return false;
@@ -349,17 +401,31 @@ Voir dans l'interface admin : ${adminUrl}
 
 // Envoyer un email de confirmation au client
 async function sendClientConfirmation(demande) {
+    const startTime = Date.now();
+    
     if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email non envoyé.');
+        console.error('='.repeat(60));
+        console.error('❌ SERVICE EMAIL NON INITIALISÉ');
+        console.error('='.repeat(60));
+        console.error('⚠️  Service email non initialisé. Email non envoyé.');
+        console.error('💡 Vérifiez vos variables SMTP_* dans Railway');
+        console.error('='.repeat(60));
         return { success: false, error: 'Service email non configuré' };
     }
 
     try {
         const template = getClientConfirmationTemplate(demande);
         
-        console.log('📧 Tentative d\'envoi email client vers:', demande.email);
-        console.log('   SMTP Host:', process.env.SMTP_HOST);
-        console.log('   SMTP Port:', process.env.SMTP_PORT || '587');
+        console.log('='.repeat(60));
+        console.log('📧 ENVOI EMAIL CLIENT');
+        console.log('='.repeat(60));
+        console.log(`📬 Destinataire: ${demande.email}`);
+        console.log(`📋 Sujet: ${template.subject}`);
+        console.log(`🌐 SMTP Host: ${process.env.SMTP_HOST}`);
+        console.log(`🔌 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
+        console.log(`👤 SMTP User: ${process.env.SMTP_USER}`);
+        console.log(`📤 From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
         
         const info = await transporter.sendMail({
             from: `"PrestigeDrive" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
@@ -369,59 +435,163 @@ async function sendClientConfirmation(demande) {
             text: template.text
         });
 
-        console.log('✅ Email de confirmation envoyé au client:', info.messageId);
-        console.log('   📬 Destinataire:', demande.email);
-        console.log('   Response:', info.response || 'N/A');
+        const duration = Date.now() - startTime;
+        console.log('='.repeat(60));
+        console.log('✅ EMAIL CLIENT ENVOYÉ AVEC SUCCÈS');
+        console.log('='.repeat(60));
+        console.log(`✅ Message ID: ${info.messageId}`);
+        console.log(`📬 Destinataire: ${demande.email}`);
+        console.log(`📧 Response: ${info.response || 'N/A'}`);
+        console.log(`⏱️  Durée: ${duration}ms`);
+        console.log('='.repeat(60));
+        
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de l\'email au client:', error.message);
-        console.error('   Code:', error.code || 'N/A');
-        console.error('   Command:', error.command || 'N/A');
-        console.error('   Destinataire:', demande.email);
-        console.error('   Stack:', error.stack);
+        const duration = Date.now() - startTime;
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR ENVOI EMAIL CLIENT');
+        console.error('='.repeat(60));
+        console.error(`❌ Message: ${error.message}`);
+        console.error(`📋 Code: ${error.code || 'N/A'}`);
+        console.error(`🔧 Command: ${error.command || 'N/A'}`);
+        console.error(`📬 Destinataire: ${demande.email}`);
+        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`📚 Stack: ${error.stack}`);
+        console.error('='.repeat(60));
         return { success: false, error: error.message, code: error.code };
     }
 }
 
 // Envoyer une notification à l'admin
 async function sendAdminNotification(demande) {
-    if (!transporter) {
-        console.warn('⚠️  Service email non initialisé. Email non envoyé.');
-        return { success: false, error: 'Service email non configuré' };
-    }
-
+    const startTime = Date.now();
+    
     const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
     
     if (!adminEmail) {
-        console.warn('⚠️  ADMIN_EMAIL non configuré. Notification admin non envoyée.');
+        console.error('='.repeat(60));
+        console.error('❌ ADMIN_EMAIL NON CONFIGURÉ');
+        console.error('='.repeat(60));
+        console.error('⚠️  ADMIN_EMAIL non configuré. Notification admin non envoyée.');
+        console.error('💡 Configurez ADMIN_EMAIL dans Railway → Variables');
+        console.error('='.repeat(60));
         return { success: false, error: 'ADMIN_EMAIL non configuré' };
+    }
+
+    // Utiliser Resend API si configuré
+    if (useResendAPI && resendClient) {
+        try {
+            const template = getAdminNotificationTemplate(demande);
+            
+            console.log('='.repeat(60));
+            console.log('📧 ENVOI EMAIL ADMIN (Resend API)');
+            console.log('='.repeat(60));
+            console.log(`📬 Destinataire: ${adminEmail}`);
+            console.log(`📋 Sujet: ${template.subject}`);
+            console.log(`📤 From: ${process.env.SMTP_FROM || 'noreply@prestigedrive.fr'}`);
+            console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
+            
+            const { data, error } = await resendClient.emails.send({
+                from: `PrestigeDrive - Système <${process.env.SMTP_FROM || 'noreply@prestigedrive.fr'}>`,
+                to: adminEmail,
+                subject: template.subject,
+                html: template.html,
+                text: template.text
+            });
+            
+            if (error) {
+                throw error;
+            }
+            
+            const duration = Date.now() - startTime;
+            console.log('='.repeat(60));
+            console.log('✅ EMAIL ADMIN ENVOYÉ AVEC SUCCÈS (Resend API)');
+            console.log('='.repeat(60));
+            console.log(`✅ Message ID: ${data?.id || 'N/A'}`);
+            console.log(`📬 Destinataire: ${adminEmail}`);
+            console.log(`⏱️  Durée: ${duration}ms`);
+            console.log('='.repeat(60));
+            
+            return { success: true, messageId: data?.id };
+        } catch (error) {
+            const duration = Date.now() - startTime;
+            console.error('='.repeat(60));
+            console.error('❌ ERREUR ENVOI EMAIL ADMIN (Resend API)');
+            console.error('='.repeat(60));
+            console.error(`❌ Message: ${error.message}`);
+            console.error(`📋 Code: ${error.name || 'N/A'}`);
+            console.error(`📬 Destinataire: ${adminEmail}`);
+            console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+            console.error(`📚 Stack: ${error.stack}`);
+            console.error('='.repeat(60));
+            return { success: false, error: error.message };
+        }
+    }
+    
+    if (!transporter) {
+        console.error('='.repeat(60));
+        console.error('❌ SERVICE EMAIL NON INITIALISÉ');
+        console.error('='.repeat(60));
+        console.error('⚠️  Service email non initialisé. Email non envoyé.');
+        console.error('💡 Vérifiez vos variables SMTP_* dans Railway');
+        console.error('='.repeat(60));
+        return { success: false, error: 'Service email non configuré' };
     }
 
     try {
         const template = getAdminNotificationTemplate(demande);
         
-        console.log('📧 Tentative d\'envoi email admin vers:', adminEmail);
-        console.log('   SMTP Host:', process.env.SMTP_HOST);
-        console.log('   SMTP Port:', process.env.SMTP_PORT || '587');
+        console.log('='.repeat(60));
+        console.log('📧 ENVOI EMAIL ADMIN');
+        console.log('='.repeat(60));
+        console.log(`📬 Destinataire: ${adminEmail}`);
+        console.log(`📋 Sujet: ${template.subject}`);
+        console.log(`🌐 SMTP Host: ${process.env.SMTP_HOST}`);
+        console.log(`🔌 SMTP Port: ${process.env.SMTP_PORT || '587'}`);
+        console.log(`👤 SMTP User: ${process.env.SMTP_USER}`);
+        console.log(`📤 From: ${process.env.SMTP_FROM || process.env.SMTP_USER}`);
+        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
         
-        const info = await transporter.sendMail({
+        const mailOptions = {
             from: `"PrestigeDrive - Système" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: adminEmail,
             subject: template.subject,
             html: template.html,
             text: template.text
-        });
+        };
+        
+        console.log('📤 Options d\'envoi:');
+        console.log(`   From: ${mailOptions.from}`);
+        console.log(`   To: ${mailOptions.to}`);
+        console.log(`   Subject: ${mailOptions.subject}`);
+        console.log(`   HTML length: ${mailOptions.html.length} caractères`);
+        console.log(`   Text length: ${mailOptions.text.length} caractères`);
+        
+        const info = await transporter.sendMail(mailOptions);
 
-        console.log('✅ Notification admin envoyée:', info.messageId);
-        console.log('   📬 Destinataire:', adminEmail);
-        console.log('   Response:', info.response || 'N/A');
+        const duration = Date.now() - startTime;
+        console.log('='.repeat(60));
+        console.log('✅ EMAIL ADMIN ENVOYÉ AVEC SUCCÈS');
+        console.log('='.repeat(60));
+        console.log(`✅ Message ID: ${info.messageId}`);
+        console.log(`📬 Destinataire: ${adminEmail}`);
+        console.log(`📧 Response: ${info.response || 'N/A'}`);
+        console.log(`⏱️  Durée: ${duration}ms`);
+        console.log('='.repeat(60));
+        
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de la notification admin:', error.message);
-        console.error('   Code:', error.code || 'N/A');
-        console.error('   Command:', error.command || 'N/A');
-        console.error('   Destinataire:', adminEmail);
-        console.error('   Stack:', error.stack);
+        const duration = Date.now() - startTime;
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR ENVOI EMAIL ADMIN');
+        console.error('='.repeat(60));
+        console.error(`❌ Message: ${error.message}`);
+        console.error(`📋 Code: ${error.code || 'N/A'}`);
+        console.error(`🔧 Command: ${error.command || 'N/A'}`);
+        console.error(`📬 Destinataire: ${adminEmail}`);
+        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`📚 Stack: ${error.stack}`);
+        console.error('='.repeat(60));
         return { success: false, error: error.message, code: error.code };
     }
 }
