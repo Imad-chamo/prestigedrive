@@ -13,7 +13,7 @@ function initEmailService() {
     }
 
     try {
-        transporter = nodemailer.createTransport({
+        const smtpConfig = {
             host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587'),
             secure: process.env.SMTP_SECURE === 'true', // true pour 465, false pour autres ports
@@ -25,11 +25,20 @@ function initEmailService() {
                 // Ne pas rejeter les certificats non autorisés (pour certains serveurs)
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
             },
-            // Options de timeout pour éviter les timeouts
-            connectionTimeout: 10000, // 10 secondes
-            greetingTimeout: 10000,
-            socketTimeout: 10000
-        });
+            // Options de timeout augmentées pour Railway
+            connectionTimeout: 20000, // 20 secondes
+            greetingTimeout: 20000,
+            socketTimeout: 20000,
+            // Options supplémentaires pour Railway
+            pool: true,
+            maxConnections: 1,
+            maxMessages: 3
+        };
+
+        console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
+        console.log(`📧 User: ${smtpConfig.auth.user}`);
+
+        transporter = nodemailer.createTransport(smtpConfig);
 
         console.log('✅ Service email initialisé avec succès');
         return true;
@@ -381,7 +390,8 @@ async function sendAdminNotification(demande) {
         console.log('✅ Notification admin envoyée:', info.messageId);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de la notification admin:', error);
+        console.error('❌ Erreur lors de l\'envoi de la notification admin:', error.message);
+        console.error('   Code:', error.code);
         return { success: false, error: error.message };
     }
 }
@@ -532,7 +542,8 @@ async function sendDevisEmail(demande) {
         console.log('✅ Email de devis envoyé au client:', info.messageId);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de l\'email de devis:', error);
+        console.error('❌ Erreur lors de l\'envoi de l\'email de devis:', error.message);
+        console.error('   Code:', error.code);
         return { success: false, error: error.message };
     }
 }
