@@ -359,11 +359,29 @@ app.post('/api/demandes', async (req, res) => {
 
         const nouvelleDemande = await Demande.create(demandeData);
 
+        console.log('📧 Tentative d\'envoi des emails pour la demande:', nouvelleDemande._id);
+        console.log('   Email client:', nouvelleDemande.email);
+        console.log('   Email admin:', process.env.ADMIN_EMAIL || process.env.SMTP_USER);
+
         // Envoyer les emails (client + admin) de manière asynchrone
         // Ne pas bloquer la réponse si l'envoi d'email échoue
-        emailService.sendNewDemandeEmails(nouvelleDemande).catch(error => {
-            console.error('⚠️  Erreur lors de l\'envoi des emails (non bloquant):', error);
-        });
+        emailService.sendNewDemandeEmails(nouvelleDemande)
+            .then(results => {
+                console.log('📧 Résultats envoi emails:', {
+                    client: results.client.success ? '✅' : '❌',
+                    admin: results.admin.success ? '✅' : '❌'
+                });
+                if (!results.client.success) {
+                    console.error('❌ Erreur email client:', results.client.error);
+                }
+                if (!results.admin.success) {
+                    console.error('❌ Erreur email admin:', results.admin.error);
+                }
+            })
+            .catch(error => {
+                console.error('⚠️  Erreur lors de l\'envoi des emails (non bloquant):', error);
+                console.error('   Détails:', error.message);
+            });
 
         res.status(201).json({ success: true, data: nouvelleDemande });
     } catch (error) {

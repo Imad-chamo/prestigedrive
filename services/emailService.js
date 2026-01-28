@@ -357,9 +357,12 @@ async function sendClientConfirmation(demande) {
         });
 
         console.log('✅ Email de confirmation envoyé au client:', info.messageId);
+        console.log('   📬 Destinataire:', demande.email);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error('❌ Erreur lors de l\'envoi de l\'email au client:', error);
+        console.error('❌ Erreur lors de l\'envoi de l\'email au client:', error.message);
+        console.error('   Code:', error.code);
+        console.error('   Destinataire:', demande.email);
         return { success: false, error: error.message };
     }
 }
@@ -390,9 +393,12 @@ async function sendAdminNotification(demande) {
         });
 
         console.log('✅ Notification admin envoyée:', info.messageId);
+        console.log('   📬 Destinataire:', adminEmail);
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi de la notification admin:', error.message);
+        console.error('   Code:', error.code);
+        console.error('   Destinataire:', adminEmail);
         return { success: false, error: error.message };
     }
 }
