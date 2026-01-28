@@ -20,25 +20,30 @@ function initEmailService() {
     }
 
     try {
+        const port = parseInt(process.env.SMTP_PORT || '587');
+        const isSecure = process.env.SMTP_SECURE === 'true' || port === 465;
+        
         const smtpConfig = {
             host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true',
+            port: port,
+            secure: isSecure, // true pour port 465, false pour port 587
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
             },
             tls: {
-                rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
+                rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
+                ciphers: 'SSLv3'
             },
             // Options optimisées pour Railway et Brevo
-            connectionTimeout: 60000, // 60 secondes (augmenté pour Railway)
-            greetingTimeout: 60000,
-            socketTimeout: 60000,
-            // Pooling pour améliorer la stabilité
-            pool: true,
-            maxConnections: 1,
-            maxMessages: 3
+            connectionTimeout: 90000, // 90 secondes (augmenté pour Railway)
+            greetingTimeout: 90000,
+            socketTimeout: 90000,
+            // Désactiver le pooling pour éviter les problèmes de connexion persistante
+            pool: false,
+            // Options de debug (désactivé en production)
+            debug: process.env.NODE_ENV !== 'production',
+            logger: process.env.NODE_ENV !== 'production'
         };
 
         console.log(`📧 Configuration SMTP: ${smtpConfig.host}:${smtpConfig.port} (secure: ${smtpConfig.secure})`);
