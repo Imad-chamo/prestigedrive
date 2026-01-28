@@ -140,15 +140,26 @@ function getClientConfirmationTemplate(demande) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
             line-height: 1.7; 
             color: #2c3e50; 
             background-color: #f5f7fa;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+        /* Améliorer l'affichage des emojis */
+        emoji, .emoji {
+            font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+            font-style: normal;
+            font-variant: normal;
+            font-weight: normal;
+            line-height: 1;
+            display: inline-block;
+            vertical-align: middle;
         }
         .email-wrapper { 
             max-width: 600px; 
@@ -231,10 +242,11 @@ function getClientConfirmationTemplate(demande) {
         .info-label { 
             font-weight: 600; 
             color: #7f8c9a; 
-            font-size: 12px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 13px; 
+            text-transform: none;
+            letter-spacing: 0.3px;
             margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
         }
         .info-value { 
             color: #2c3e50; 
@@ -471,10 +483,11 @@ function getAdminNotificationTemplate(demande) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
             line-height: 1.7; 
             color: #2c3e50; 
             background-color: #f5f7fa;
@@ -553,10 +566,11 @@ function getAdminNotificationTemplate(demande) {
         .info-label { 
             font-weight: 600; 
             color: #991b1b; 
-            font-size: 12px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 13px; 
+            text-transform: none;
+            letter-spacing: 0.3px;
             margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
         }
         .info-value { 
             color: #2c3e50; 
@@ -819,10 +833,11 @@ function getDevisTemplate(demande) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
             line-height: 1.7; 
             color: #2c3e50; 
             background-color: #f5f7fa;
@@ -897,12 +912,13 @@ function getDevisTemplate(demande) {
         .devis-label {
             font-size: 14px;
             color: #7f8c9a;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            text-transform: none;
+            letter-spacing: 0.5px;
             margin-bottom: 15px;
             font-weight: 600;
             position: relative;
             z-index: 1;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
         }
         .devis-amount { 
             font-size: 56px; 
@@ -933,9 +949,10 @@ function getDevisTemplate(demande) {
             font-weight: 600;
             color: #475569;
             font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: none;
+            letter-spacing: 0.3px;
             margin-bottom: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
         }
         .reponse-text {
             color: #2c3e50;
@@ -953,9 +970,10 @@ function getDevisTemplate(demande) {
             font-weight: 600;
             color: #5a6c7d;
             font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: none;
+            letter-spacing: 0.3px;
             margin-bottom: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
         }
         .details-list {
             list-style: none;
