@@ -24,7 +24,11 @@ function initEmailService() {
             tls: {
                 // Ne pas rejeter les certificats non autorisés (pour certains serveurs)
                 rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
-            }
+            },
+            // Options de timeout pour éviter les timeouts
+            connectionTimeout: 10000, // 10 secondes
+            greetingTimeout: 10000,
+            socketTimeout: 10000
         });
 
         console.log('✅ Service email initialisé avec succès');

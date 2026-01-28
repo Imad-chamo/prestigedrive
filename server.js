@@ -691,8 +691,16 @@ connectDB().then(async () => {
     const emailInitialized = emailService.initEmailService();
     if (emailInitialized) {
         // Vérifier la connexion SMTP (optionnel, ne bloque pas le démarrage)
-        emailService.verifyConnection().catch(error => {
+        emailService.verifyConnection().then(success => {
+            if (success) {
+                console.log('✅ Connexion SMTP vérifiée avec succès');
+            } else {
+                console.warn('⚠️  Vérification SMTP échouée (le service fonctionnera quand même)');
+                console.warn('   Vérifiez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS dans Railway');
+            }
+        }).catch(error => {
             console.warn('⚠️  Vérification SMTP échouée (le service fonctionnera quand même):', error.message);
+            console.warn('   Vérifiez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS dans Railway');
         });
     }
 
