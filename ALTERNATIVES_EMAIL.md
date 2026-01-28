@@ -61,9 +61,13 @@ ADMIN_EMAIL=votre-email@gmail.com
 
 ## 🥈 Option 2 : Brevo (Sendinblue) - TRÈS FACILE
 
-**Gratuit** : 300 emails/jour (9000/mois)
+**Gratuit** : 300 emails/jour (9000/mois) - **3x plus que SendGrid !**
 
-### Étapes (5 minutes) :
+### 📖 Guide Complet
+
+**👉 Consultez [GUIDE_BREVO.md](GUIDE_BREVO.md) pour un guide étape par étape détaillé !**
+
+### Étapes rapides (5 minutes) :
 
 1. **Créer un compte** : https://www.brevo.com
    - Cliquez sur "Sign up free"
@@ -93,6 +97,8 @@ ADMIN_EMAIL=votre-email@gmail.com
 ```
 
 5. **Redéployez** et testez
+
+**📖 Pour plus de détails, voir [GUIDE_BREVO.md](GUIDE_BREVO.md)**
 
 ✅ **Avantages** :
 - 300 emails/jour gratuits (le plus généreux !)
