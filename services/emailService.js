@@ -1,31 +1,30 @@
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 
 // Client Brevo API
-let brevoClient = null;
-let brevoApiKey = null;
+let emailApi = null;
 
 // Initialiser le service email avec Brevo API
 async function initEmailService() {
     // Vérifier si la clé API Brevo est configurée
-    brevoApiKey = process.env.BREVO_API_KEY;
+    const apiKey = process.env.BREVO_API_KEY;
     
-    if (!brevoApiKey) {
-        console.warn('='.repeat(60));
-        console.warn('⚠️  BREVO_API_KEY NON CONFIGURÉE');
-        console.warn('='.repeat(60));
-        console.warn('⚠️  Configuration email non trouvée. Les emails ne seront pas envoyés.');
-        console.warn('💡 Pour activer les emails, configurez dans Render → Variables :');
-        console.warn('   - BREVO_API_KEY (votre clé API Brevo)');
-        console.warn('   - SMTP_FROM (email expéditeur, ex: "PrestigeDrive <a10697001@smtp-brevo.com>")');
-        console.warn('   - ADMIN_EMAIL (email pour notifications)');
-        console.warn('='.repeat(60));
-        return false;
+    if (!apiKey) {
+        const errorMsg = 'BREVO_API_KEY non défini ! Configurez BREVO_API_KEY dans Render → Environment';
+        console.error('='.repeat(60));
+        console.error('❌ ERREUR CRITIQUE - BREVO_API_KEY NON CONFIGURÉE');
+        console.error('='.repeat(60));
+        console.error(`❌ ${errorMsg}`);
+        console.error('='.repeat(60));
+        throw new Error(errorMsg);
     }
 
     try {
-        // Initialiser le client Brevo
-        brevoClient = new SibApiV3Sdk.TransactionalEmailsApi();
-        brevoClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
+        // Initialiser le client Brevo selon la méthode officielle
+        const defaultClient = SibApiV3Sdk.ApiClient.instance;
+        const apiKeyAuth = defaultClient.authentications['api-key'];
+        apiKeyAuth.apiKey = apiKey;
+        
+        emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
         const fromAddress = process.env.SMTP_FROM || 'PrestigeDrive <a10697001@smtp-brevo.com>';
         
@@ -33,7 +32,7 @@ async function initEmailService() {
         console.log('📧 CONFIGURATION BREVO API');
         console.log('='.repeat(60));
         console.log('📋 Service: Brevo Transactional Emails API');
-        console.log(`🔑 API Key: ${brevoApiKey.substring(0, 10)}...${brevoApiKey.substring(brevoApiKey.length - 5)}`);
+        console.log(`🔑 API Key: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 5)}`);
         console.log(`📤 From: ${fromAddress}`);
         console.log(`📧 Admin: ${process.env.ADMIN_EMAIL || 'Non configuré'}`);
         console.log('='.repeat(60));
@@ -49,18 +48,17 @@ async function initEmailService() {
         console.error(`❌ Message: ${error.message}`);
         console.error(`📚 Stack: ${error.stack}`);
         console.error('='.repeat(60));
-        return false;
+        throw error;
     }
 }
 
 // Vérifier la connexion Brevo API
 async function verifyConnection() {
-    if (!brevoClient) {
+    if (!emailApi) {
         return false;
     }
     
     try {
-        // Test simple : vérifier que le client est initialisé
         console.log('✅ Client Brevo API vérifié');
         return true;
     } catch (error) {
@@ -73,54 +71,48 @@ async function verifyConnection() {
 async function sendEmail(to, subject, htmlContent, textContent, fromName = 'PrestigeDrive') {
     const startTime = Date.now();
     
-    if (!brevoClient) {
-        throw new Error('Service email Brevo non initialisé');
+    if (!emailApi) {
+        throw new Error('Service email Brevo non initialisé. Appelez initEmailService() d\'abord.');
     }
 
     const fromAddress = process.env.SMTP_FROM || 'PrestigeDrive <a10697001@smtp-brevo.com>';
     
     // Extraire l'email FROM (format: "Name <email@domain.com>" ou "email@domain.com")
     let fromEmail = fromAddress;
+    let fromNameExtracted = fromName;
+    
     if (fromAddress.includes('<') && fromAddress.includes('>')) {
-        fromEmail = fromAddress.match(/<([^>]+)>/)[1];
+        const match = fromAddress.match(/^(.+?)\s*<([^>]+)>$/);
+        if (match) {
+            fromNameExtracted = match[1].trim().replace(/"/g, '');
+            fromEmail = match[2].trim();
+        } else {
+            fromEmail = fromAddress.match(/<([^>]+)>/)[1];
+        }
     }
     
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.textContent = textContent;
-    sendSmtpEmail.sender = { name: fromName, email: fromEmail };
+    sendSmtpEmail.sender = { name: fromNameExtracted, email: fromEmail };
     sendSmtpEmail.to = [{ email: to }];
 
     try {
-        const result = await brevoClient.sendTransacEmail(sendSmtpEmail);
+        const result = await emailApi.sendTransacEmail(sendSmtpEmail);
         const duration = Date.now() - startTime;
         
-        console.log('='.repeat(60));
-        console.log('✅ EMAIL ENVOYÉ AVEC SUCCÈS (Brevo API)');
-        console.log('='.repeat(60));
-        console.log(`✅ Message ID: ${result.messageId || 'N/A'}`);
-        console.log(`📬 Destinataire: ${to}`);
-        console.log(`📋 Sujet: ${subject}`);
-        console.log(`⏱️  Durée: ${duration}ms`);
-        console.log('='.repeat(60));
+        console.log(`✅ Email envoyé à ${to} en ${duration}ms`);
+        console.log(`   Message ID: ${result.messageId || 'N/A'}`);
         
-        return { success: true, messageId: result.messageId || result.response?.headers?.['x-message-id'] };
+        return { success: true, messageId: result.messageId };
     } catch (error) {
         const duration = Date.now() - startTime;
-        console.error('='.repeat(60));
-        console.error('❌ ERREUR ENVOI EMAIL (Brevo API)');
-        console.error('='.repeat(60));
-        console.error(`❌ Message: ${error.message}`);
-        console.error(`📋 Code: ${error.code || 'N/A'}`);
-        console.error(`📬 Destinataire: ${to}`);
-        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`❌ Erreur d'envoi à ${to} après ${duration}ms: ${error.message}`);
         if (error.response) {
-            console.error(`📋 Response Status: ${error.response.status || 'N/A'}`);
-            console.error(`📋 Response Body: ${JSON.stringify(error.response.body || {})}`);
+            console.error(`   Status: ${error.response.status || 'N/A'}`);
+            console.error(`   Body: ${JSON.stringify(error.response.body || {})}`);
         }
-        console.error(`📚 Stack: ${error.stack}`);
-        console.error('='.repeat(60));
         throw error;
     }
 }
@@ -398,28 +390,16 @@ Voir dans l'interface admin : ${adminUrl}
 
 // Envoyer un email de confirmation au client
 async function sendClientConfirmation(demande) {
-    const startTime = Date.now();
-    
-    if (!brevoClient) {
-        console.error('='.repeat(60));
-        console.error('❌ SERVICE EMAIL NON INITIALISÉ');
-        console.error('='.repeat(60));
-        console.error('⚠️  Service email Brevo non initialisé. Email non envoyé.');
-        console.error('💡 Vérifiez BREVO_API_KEY dans Render → Variables');
-        console.error('='.repeat(60));
-        return { success: false, error: 'Service email non configuré' };
+    if (!emailApi) {
+        const errorMsg = 'Service email Brevo non initialisé';
+        console.error(`❌ ${errorMsg}`);
+        return { success: false, error: errorMsg };
     }
 
     try {
         const template = getClientConfirmationTemplate(demande);
         
-        console.log('='.repeat(60));
-        console.log('📧 ENVOI EMAIL CLIENT');
-        console.log('='.repeat(60));
-        console.log(`📬 Destinataire: ${demande.email}`);
-        console.log(`📋 Sujet: ${template.subject}`);
-        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-        console.log('='.repeat(60));
+        console.log(`📧 Envoi email client vers: ${demande.email}`);
         
         const result = await sendEmail(
             demande.email,
@@ -429,50 +409,34 @@ async function sendClientConfirmation(demande) {
             'PrestigeDrive'
         );
         
+        console.log('✅ Email client envoyé ✅');
         return { success: true, messageId: result.messageId };
     } catch (error) {
-        const duration = Date.now() - startTime;
-        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`❌ Erreur d'envoi email client: ${error.message}`);
         return { success: false, error: error.message, code: error.code };
     }
 }
 
 // Envoyer une notification à l'admin
 async function sendAdminNotification(demande) {
-    const startTime = Date.now();
-    
     const adminEmail = process.env.ADMIN_EMAIL;
     
     if (!adminEmail) {
-        console.error('='.repeat(60));
-        console.error('❌ ADMIN_EMAIL NON CONFIGURÉ');
-        console.error('='.repeat(60));
-        console.error('⚠️  ADMIN_EMAIL non configuré. Notification admin non envoyée.');
-        console.error('💡 Configurez ADMIN_EMAIL dans Render → Variables');
-        console.error('='.repeat(60));
-        return { success: false, error: 'ADMIN_EMAIL non configuré' };
+        const errorMsg = 'ADMIN_EMAIL non configuré';
+        console.error(`❌ ${errorMsg}`);
+        return { success: false, error: errorMsg };
     }
     
-    if (!brevoClient) {
-        console.error('='.repeat(60));
-        console.error('❌ SERVICE EMAIL NON INITIALISÉ');
-        console.error('='.repeat(60));
-        console.error('⚠️  Service email Brevo non initialisé. Email non envoyé.');
-        console.error('💡 Vérifiez BREVO_API_KEY dans Render → Variables');
-        console.error('='.repeat(60));
-        return { success: false, error: 'Service email non configuré' };
+    if (!emailApi) {
+        const errorMsg = 'Service email Brevo non initialisé';
+        console.error(`❌ ${errorMsg}`);
+        return { success: false, error: errorMsg };
     }
 
     try {
         const template = getAdminNotificationTemplate(demande);
         
-        console.log('='.repeat(60));
-        console.log('📧 ENVOI EMAIL ADMIN');
-        console.log('='.repeat(60));
-        console.log(`📬 Destinataire: ${adminEmail}`);
-        console.log(`📋 Sujet: ${template.subject}`);
-        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-        console.log('='.repeat(60));
+        console.log(`📧 Envoi email admin vers: ${adminEmail}`);
         
         const result = await sendEmail(
             adminEmail,
@@ -482,10 +446,10 @@ async function sendAdminNotification(demande) {
             'PrestigeDrive - Système'
         );
         
+        console.log('✅ Email admin envoyé ✅');
         return { success: true, messageId: result.messageId };
     } catch (error) {
-        const duration = Date.now() - startTime;
-        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`❌ Erreur d'envoi email admin: ${error.message}`);
         return { success: false, error: error.message, code: error.code };
     }
 }
@@ -617,9 +581,7 @@ L'équipe PrestigeDrive
 
 // Envoyer l'email de devis au client
 async function sendDevisEmail(demande) {
-    const startTime = Date.now();
-    
-    if (!brevoClient) {
+    if (!emailApi) {
         console.warn('⚠️  Service email Brevo non initialisé. Email de devis non envoyé.');
         return { success: false, error: 'Service email non configuré' };
     }
@@ -627,13 +589,7 @@ async function sendDevisEmail(demande) {
     try {
         const template = getDevisTemplate(demande);
         
-        console.log('='.repeat(60));
-        console.log('📧 ENVOI EMAIL DEVIS');
-        console.log('='.repeat(60));
-        console.log(`📬 Destinataire: ${demande.email}`);
-        console.log(`📋 Sujet: ${template.subject}`);
-        console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-        console.log('='.repeat(60));
+        console.log(`📧 Envoi email devis vers: ${demande.email}`);
         
         const result = await sendEmail(
             demande.email,
@@ -643,10 +599,10 @@ async function sendDevisEmail(demande) {
             'PrestigeDrive'
         );
         
+        console.log('✅ Email devis envoyé ✅');
         return { success: true, messageId: result.messageId };
     } catch (error) {
-        const duration = Date.now() - startTime;
-        console.error(`⏱️  Durée avant erreur: ${duration}ms`);
+        console.error(`❌ Erreur d'envoi email devis: ${error.message}`);
         return { success: false, error: error.message, code: error.code };
     }
 }
